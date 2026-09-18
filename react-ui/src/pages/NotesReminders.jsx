@@ -85,7 +85,14 @@ export default function NotesReminders() {
 
       <VehicleDocuments />
 
-      <div className="mt-6">
+      <div className="w-full h-px bg-zinc-200 dark:bg-zinc-800 my-2"></div>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-2 px-1">
+          <FileText size={14} />
+          Logbook Entries
+        </h2>
+        
         {loading ? (
           <p className="text-zinc-500 text-center py-4">Loading...</p>
         ) : futureNotes.length === 0 && pastNotes.length === 0 ? (
@@ -102,10 +109,10 @@ export default function NotesReminders() {
             {/* Reminders Section */}
             {futureNotes.length > 0 && (
               <div className="flex flex-col gap-3">
-                <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-2 px-1">
-                  <Pin size={14} className="text-orange-500" />
+                <h3 className="text-xs font-semibold text-orange-500/80 uppercase tracking-wider flex items-center gap-2 px-1">
+                  <Pin size={12} />
                   Upcoming Reminders
-                </h2>
+                </h3>
                 {futureNotes.map(reminder => (
                   <div key={reminder.id} className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 rounded-2xl p-5 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
@@ -126,10 +133,10 @@ export default function NotesReminders() {
             {pastNotes.length > 0 && (
               <div className="flex flex-col gap-3 mt-2">
                 {futureNotes.length > 0 && (
-                  <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-2 px-1 mt-2">
-                    <FileText size={14} />
+                  <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2 px-1 mt-2">
+                    <FileText size={12} />
                     Past Notes
-                  </h2>
+                  </h3>
                 )}
                 {pastNotes.map(note => (
                   <div key={note.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm rounded-2xl p-5">

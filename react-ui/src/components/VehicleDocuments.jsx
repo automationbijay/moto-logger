@@ -147,30 +147,43 @@ export default function VehicleDocuments() {
         Important Documents
       </h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="flex flex-col gap-3">
         {DOC_TYPES.map(({ id, label }) => {
           const doc = documents[id];
           const isUploading = uploadingState[id];
           
           return (
-            <div key={id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex flex-col shadow-sm">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-3">{label}</h3>
+            <div key={id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 flex items-center shadow-sm">
               
-              {doc?.publicUrl ? (
-                <div className="relative group rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 aspect-video flex items-center justify-center cursor-pointer border border-zinc-100 dark:border-zinc-700" onClick={() => setViewImage(doc.publicUrl)}>
-                  <img src={doc.publicUrl} alt={label} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">View</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl aspect-video flex flex-col items-center justify-center border border-dashed border-zinc-200 dark:border-zinc-700 text-zinc-400">
-                  <ImageIcon size={24} className="mb-2 opacity-50" />
-                  <span className="text-xs">No document</span>
-                </div>
-              )}
+              {/* Thumbnail / Placeholder */}
+              <div 
+                className={`w-16 h-12 rounded-lg shrink-0 overflow-hidden flex items-center justify-center border ${doc?.publicUrl ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 cursor-pointer relative group' : 'bg-zinc-50 dark:bg-zinc-800/50 border-dashed border-zinc-200 dark:border-zinc-700'}`}
+                onClick={() => doc?.publicUrl && setViewImage(doc.publicUrl)}
+              >
+                {doc?.publicUrl ? (
+                  <>
+                    <img src={doc.publicUrl} alt={label} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white text-[10px] font-medium uppercase tracking-wider">View</span>
+                    </div>
+                  </>
+                ) : (
+                  <ImageIcon size={20} className="text-zinc-400 opacity-50" />
+                )}
+              </div>
               
-              <div className="mt-4 flex gap-2 w-full">
+              {/* Info */}
+              <div className="ml-3 flex-1 min-w-0">
+                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 text-sm truncate">{label}</h3>
+                <div className="flex items-center mt-0.5">
+                  <span className={`text-xs font-medium ${doc?.publicUrl ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                    {doc?.publicUrl ? 'Uploaded' : 'Missing'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="flex gap-2 ml-2 shrink-0">
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -190,18 +203,18 @@ export default function VehicleDocuments() {
                 <button 
                   disabled={isUploading}
                   onClick={() => fileInputRefs.current[`${id}_capture`]?.click()}
-                  className="flex-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-50 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                  className="w-9 h-9 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
+                  aria-label="Capture with camera"
                 >
                   {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
-                  Capture
                 </button>
                 <button 
                   disabled={isUploading}
                   onClick={() => fileInputRefs.current[`${id}_upload`]?.click()}
-                  className="flex-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-50 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                  className="w-9 h-9 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
+                  aria-label="Upload from gallery"
                 >
                   {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                  Upload
                 </button>
               </div>
             </div>
@@ -211,19 +224,21 @@ export default function VehicleDocuments() {
       
       {/* Fullscreen Image Viewer Modal */}
       {viewImage && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setViewImage(null)}>
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4" onClick={() => setViewImage(null)}>
           <button 
-            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full backdrop-blur-sm transition-colors"
+            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full backdrop-blur-sm transition-colors z-50"
             onClick={(e) => { e.stopPropagation(); setViewImage(null); }}
           >
             <X size={24} />
           </button>
-          <img 
-            src={viewImage} 
-            alt="Document Full View" 
-            className="max-w-full max-h-[90vh] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="w-full h-full flex items-center justify-center">
+            <img 
+              src={viewImage} 
+              alt="Document Full View" 
+              className="max-w-full max-h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         </div>
       )}
     </div>
