@@ -103,7 +103,7 @@ export default function EditProfile() {
                 id="full_name" 
                 value={formData.full_name} 
                 onChange={handleChange} 
-                placeholder="John Doe"
+                placeholder="Your Full Name"
                 className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all placeholder:text-zinc-400" 
               />
             </div>

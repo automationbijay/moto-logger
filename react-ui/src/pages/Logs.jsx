@@ -1,17 +1,60 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Wrench, Fuel } from 'lucide-react'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
+import { useVehicle } from '../contexts/VehicleContext.jsx'
+import { supabase } from '../lib/supabase.js'
 
 export default function Logs() {
+  const { activeVehicle } = useVehicle()
   const [activeTab, setActiveTab] = useState('all') // 'all', 'service', 'fuel'
+  const [logs, setLogs] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // Placeholder data
-  const logs = [
-    { id: 1, type: 'fuel', date: '2026-09-15', amount: '12L', cost: '$18', odometer: '15,200 km', note: 'Full tank' },
-    { id: 2, type: 'service', date: '2026-09-10', title: 'Oil Change', cost: '$45', odometer: '15,000 km', note: 'Synthetic oil' },
-    { id: 3, type: 'fuel', date: '2026-09-01', amount: '10L', cost: '$15', odometer: '14,900 km', note: '' },
-    { id: 4, type: 'service', date: '2026-08-20', title: 'Chain Adjust', cost: '$0', odometer: '14,500 km', note: 'DIY' },
-  ]
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchLogs = async () => {
+      if (!activeVehicle?.id) {
+        if (isMounted) {
+          setLogs([])
+          setLoading(false)
+        }
+        return
+      }
+
+      if (isMounted) setLoading(true)
+
+      const [fuelRes, serviceRes] = await Promise.all([
+        supabase.from('fuel_records').select('*').eq('vehicle_id', activeVehicle.id),
+        supabase.from('service_records').select('*').eq('vehicle_id', activeVehicle.id)
+      ])
+
+      if (isMounted) {
+        const fuels = (fuelRes.data || []).map(f => ({
+          ...f,
+          type: 'fuel',
+          title: `Fuel: ${f.liters}L`,
+          amount: `${f.liters}L`,
+          costStr: `$${f.cost}`,
+          odometerStr: `${f.odometer} km`
+        }))
+
+        const services = (serviceRes.data || []).map(s => ({
+          ...s,
+          type: 'service',
+          title: s.description || 'Service',
+          costStr: `$${s.cost}`,
+          odometerStr: `${s.odometer} km`
+        }))
+
+        const combined = [...fuels, ...services].sort((a, b) => new Date(b.date) - new Date(a.date))
+        setLogs(combined)
+        setLoading(false)
+      }
+    }
+
+    fetchLogs()
+  }, [activeVehicle?.id])
 
   const filteredLogs = logs.filter(log => activeTab === 'all' || log.type === activeTab)
 
@@ -47,23 +90,29 @@ export default function Logs() {
       </div>
 
       <div className="flex flex-col gap-3">
-        {filteredLogs.map(log => (
-          <div key={log.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition-transform cursor-pointer">
-            <div className={`p-3 rounded-xl ${log.type === 'service' ? 'bg-orange-100 dark:bg-orange-500/10 text-orange-600' : 'bg-blue-100 dark:bg-blue-500/10 text-blue-600'}`}>
-              {log.type === 'service' ? <Wrench size={20} /> : <Fuel size={20} />}
+        {loading ? (
+          <p className="text-zinc-500 text-center py-4">Loading logs...</p>
+        ) : filteredLogs.length === 0 ? (
+          <p className="text-zinc-500 text-center py-4">No logs found.</p>
+        ) : (
+          filteredLogs.map(log => (
+            <div key={log.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition-transform cursor-pointer">
+              <div className={`p-3 rounded-xl ${log.type === 'service' ? 'bg-orange-100 dark:bg-orange-500/10 text-orange-600' : 'bg-blue-100 dark:bg-blue-500/10 text-blue-600'}`}>
+                {log.type === 'service' ? <Wrench size={20} /> : <Fuel size={20} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 truncate">
+                  {log.title}
+                </h4>
+                <p className="text-xs text-zinc-500 mt-1 truncate">{log.date} • {log.odometerStr}</p>
+                {log.note && <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 truncate">{log.note}</p>}
+              </div>
+              <div className="text-base font-semibold text-zinc-900 dark:text-zinc-50 whitespace-nowrap">
+                {log.costStr}
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 truncate">
-                {log.type === 'service' ? log.title : `Fuel: ${log.amount}`}
-              </h4>
-              <p className="text-xs text-zinc-500 mt-1 truncate">{log.date} • {log.odometer}</p>
-              {log.note && <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 truncate">{log.note}</p>}
-            </div>
-            <div className="text-base font-semibold text-zinc-900 dark:text-zinc-50 whitespace-nowrap">
-              {log.cost}
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   )

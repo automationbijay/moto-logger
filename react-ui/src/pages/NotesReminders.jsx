@@ -1,9 +1,45 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { AlertCircle, FileText, Bell } from 'lucide-react'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
+import { useVehicle } from '../contexts/VehicleContext.jsx'
+import { supabase } from '../lib/supabase.js'
 
 export default function NotesReminders() {
+  const { activeVehicle } = useVehicle()
   const [activeTab, setActiveTab] = useState('notes') // 'notes', 'reminders'
+  const [notes, setNotes] = useState([])
+  const [reminders, setReminders] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchData = async () => {
+      if (!activeVehicle?.id) {
+        if (isMounted) {
+          setNotes([])
+          setReminders([])
+          setLoading(false)
+        }
+        return
+      }
+
+      if (isMounted) setLoading(true)
+
+      const [notesRes, remindersRes] = await Promise.all([
+        supabase.from('notes').select('*').eq('vehicle_id', activeVehicle.id).order('date', { ascending: false }),
+        supabase.from('reminders').select('*').eq('vehicle_id', activeVehicle.id)
+      ])
+
+      if (isMounted) {
+        setNotes(notesRes.data || [])
+        setReminders(remindersRes.data || [])
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [activeVehicle?.id])
 
   return (
     <div className="flex flex-col gap-6">
@@ -33,26 +69,47 @@ export default function NotesReminders() {
       </div>
 
       <div className="mt-2">
-        {activeTab === 'notes' ? (
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
-            <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-full mb-4">
-              <FileText size={32} className="text-zinc-400" />
+        {loading ? (
+          <p className="text-zinc-500 text-center py-4">Loading...</p>
+        ) : activeTab === 'notes' ? (
+          notes.length === 0 ? (
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+              <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-full mb-4">
+                <FileText size={32} className="text-zinc-400" />
+              </div>
+              <p className="text-zinc-500 dark:text-zinc-400">No notes added yet.</p>
             </div>
-            <p className="text-zinc-500 dark:text-zinc-400">No notes added yet.</p>
-          </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {notes.map(note => (
+                <div key={note.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
+                  <h3 className="font-bold text-zinc-900 dark:text-zinc-50">{note.description}</h3>
+                  <p className="text-xs text-zinc-500 mt-1">{note.date}</p>
+                  {note.notes_content && <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-2">{note.notes_content}</p>}
+                </div>
+              ))}
+            </div>
+          )
         ) : (
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
-            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              <li className="py-3 flex items-center gap-3 text-sm text-zinc-700 dark:text-zinc-300 first:pt-0 last:pb-0">
-                <AlertCircle size={20} className="text-amber-500 flex-shrink-0" />
-                <span>Oil change due in 300 km</span>
-              </li>
-              <li className="py-3 flex items-center gap-3 text-sm text-zinc-700 dark:text-zinc-300 first:pt-0 last:pb-0">
-                <AlertCircle size={20} className="text-amber-500 flex-shrink-0" />
-                <span>Chain lubrication needed</span>
-              </li>
-            </ul>
-          </div>
+          reminders.length === 0 ? (
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+              <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-full mb-4">
+                <Bell size={32} className="text-zinc-400" />
+              </div>
+              <p className="text-zinc-500 dark:text-zinc-400">No reminders added yet.</p>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
+              <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {reminders.map(reminder => (
+                  <li key={reminder.id} className="py-3 flex items-center gap-3 text-sm text-zinc-700 dark:text-zinc-300 first:pt-0 last:pb-0">
+                    <AlertCircle size={20} className="text-amber-500 flex-shrink-0" />
+                    <span>{reminder.description}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
         )}
       </div>
     </div>

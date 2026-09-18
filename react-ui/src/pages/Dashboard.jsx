@@ -32,14 +32,22 @@ export default function Dashboard() {
     fetchCurrency()
   }, [user])
 
-  const [stats, setStats] = useState({ mileage: 0, distance: 0, totalCost: 0, loading: true })
+  const [stats, setStats] = useState({ 
+    mileage: 0, 
+    distance: 0, 
+    totalCost: 0, 
+    recentServiceStr: '-', 
+    lastFillupStr: '-',
+    reminders: [],
+    loading: true 
+  })
 
   useEffect(() => {
     let isMounted = true
 
     const fetchStats = async () => {
       if (!activeVehicle?.id) {
-        if (isMounted) setStats({ mileage: 0, distance: 0, totalCost: 0, loading: false })
+        if (isMounted) setStats({ mileage: 0, distance: 0, totalCost: 0, recentServiceStr: '-', lastFillupStr: '-', reminders: [], loading: false })
         return
       }
 
@@ -47,16 +55,19 @@ export default function Dashboard() {
       
       const vId = activeVehicle.id
       
-      const [fuelRes, serviceRes, upgradeRes, taxRes] = await Promise.all([
-        supabase.from('fuel_records').select('odometer, liters, cost').eq('vehicle_id', vId).order('odometer', { ascending: true }),
-        supabase.from('service_records').select('cost').eq('vehicle_id', vId),
+      const [fuelRes, serviceRes, upgradeRes, taxRes, remindersRes] = await Promise.all([
+        supabase.from('fuel_records').select('odometer, liters, cost, date').eq('vehicle_id', vId).order('odometer', { ascending: true }),
+        supabase.from('service_records').select('cost, date').eq('vehicle_id', vId).order('date', { ascending: true }),
         supabase.from('upgrade_records').select('cost').eq('vehicle_id', vId),
-        supabase.from('tax_records').select('cost').eq('vehicle_id', vId)
+        supabase.from('tax_records').select('cost').eq('vehicle_id', vId),
+        supabase.from('reminders').select('*').eq('vehicle_id', vId)
       ])
 
       let totalCost = 0
       let distance = 0
       let mileage = 0
+      let lastFillupStr = 'No data'
+      let recentServiceStr = 'No data'
 
       const sumCost = (res) => res.data?.reduce((acc, curr) => acc + (curr.cost || 0), 0) || 0
       totalCost += sumCost(fuelRes)
@@ -67,7 +78,8 @@ export default function Dashboard() {
       const fuels = fuelRes.data || []
       if (fuels.length > 0) {
         const firstOdo = fuels[0].odometer || 0
-        const lastOdo = fuels[fuels.length - 1].odometer || 0
+        const lastFuel = fuels[fuels.length - 1]
+        const lastOdo = lastFuel.odometer || 0
         distance = Math.max(0, lastOdo - firstOdo)
         
         if (fuels.length > 1) {
@@ -79,6 +91,24 @@ export default function Dashboard() {
             mileage = distance / totalLiters
           }
         }
+        
+        // Calculate last fill up string if possible
+        if (activeVehicle.current_odometer && lastOdo) {
+          const diff = activeVehicle.current_odometer - lastOdo
+          lastFillupStr = diff >= 0 ? `${diff} km ago` : 'recently'
+        }
+      }
+
+      const services = serviceRes.data || []
+      if (services.length > 0) {
+        const lastService = services[services.length - 1]
+        if (lastService.date) {
+          const serviceDate = new Date(lastService.date)
+          const today = new Date()
+          const diffTime = Math.abs(today - serviceDate)
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+          recentServiceStr = diffDays === 0 ? 'today' : `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
+        }
       }
 
       if (isMounted) {
@@ -86,6 +116,9 @@ export default function Dashboard() {
           mileage: mileage > 0 ? mileage.toFixed(1) : '-',
           distance: distance,
           totalCost: totalCost,
+          recentServiceStr,
+          lastFillupStr,
+          reminders: remindersRes.data || [],
           loading: false
         })
       }
@@ -180,7 +213,7 @@ export default function Dashboard() {
           </div>
           <div>
             <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Recent Service</h3>
-            <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-1">2 days ago</p>
+            <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-1">{stats.loading ? '...' : stats.recentServiceStr}</p>
           </div>
         </div>
 
@@ -190,7 +223,7 @@ export default function Dashboard() {
           </div>
           <div>
             <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Last Fill-up</h3>
-            <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-1">220 km ago</p>
+            <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-1">{stats.loading ? '...' : stats.lastFillupStr}</p>
           </div>
         </div>
       </div>
@@ -202,12 +235,19 @@ export default function Dashboard() {
         </div>
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
           <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            <li className="py-3 text-sm text-zinc-700 dark:text-zinc-300 first:pt-0 last:pb-0">
-              Oil change due in 300 km
-            </li>
-            <li className="py-3 text-sm text-zinc-700 dark:text-zinc-300 first:pt-0 last:pb-0">
-              Chain lubrication needed
-            </li>
+            {stats.loading ? (
+              <li className="py-3 text-sm text-zinc-700 dark:text-zinc-300">Loading...</li>
+            ) : stats.reminders.length > 0 ? (
+              stats.reminders.map(reminder => (
+                <li key={reminder.id} className="py-3 text-sm text-zinc-700 dark:text-zinc-300 first:pt-0 last:pb-0">
+                  {reminder.description}
+                </li>
+              ))
+            ) : (
+              <li className="py-3 text-sm text-zinc-700 dark:text-zinc-300 first:pt-0 last:pb-0">
+                All good!
+              </li>
+            )}
           </ul>
         </div>
       </div>
