@@ -11,11 +11,11 @@ export default function AddLog() {
   
   // Log types
   const logTypes = [
-    { id: 'fuel', label: 'Fuel', icon: Fuel, color: 'var(--accent-primary)' },
-    { id: 'service', label: 'Service', icon: Wrench, color: 'var(--accent-secondary)' },
-    { id: 'upgrade', label: 'Upgrade', icon: ArrowUpCircle, color: '#8B5CF6' },
-    { id: 'tax', label: 'Tax', icon: Receipt, color: '#F59E0B' },
-    { id: 'note', label: 'Note', icon: FileText, color: '#64748B' },
+    { id: 'fuel', label: 'Fuel', icon: Fuel, activeBg: 'bg-orange-500', activeText: 'text-white' },
+    { id: 'service', label: 'Service', icon: Wrench, activeBg: 'bg-blue-500', activeText: 'text-white' },
+    { id: 'upgrade', label: 'Upgrade', icon: ArrowUpCircle, activeBg: 'bg-purple-500', activeText: 'text-white' },
+    { id: 'tax', label: 'Tax', icon: Receipt, activeBg: 'bg-amber-500', activeText: 'text-white' },
+    { id: 'note', label: 'Note', icon: FileText, activeBg: 'bg-zinc-600', activeText: 'text-white' },
   ]
 
   const initialType = searchParams.get('type') || 'fuel'
@@ -110,22 +110,25 @@ export default function AddLog() {
   }
 
   return (
-    <div className="page-container fade-in">
-      <header className="page-header flex-between" style={{ display: 'flex', alignItems: 'center' }}>
-        <div className="flex-center">
-          <button className="icon-btn mr-4" onClick={() => navigate(-1)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
+    <div className="flex flex-col pb-8">
+      <header className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <button 
+            className="p-2 -ml-2 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            onClick={() => navigate(-1)}
+          >
             <ChevronLeft size={24} />
           </button>
           <div>
-            <h1 style={{ margin: 0 }}>Add Log</h1>
-            <p className="mt-1 text-muted text-sm">New entry for your vehicle</p>
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Add Log</h1>
+            <p className="text-xs text-zinc-500">New entry for your vehicle</p>
           </div>
         </div>
         <VehicleSwitcher />
       </header>
 
       {/* Log Type Selector (Horizontal Scroll) */}
-      <div className="type-selector" style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '16px', marginBottom: '8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+      <div className="flex gap-3 overflow-x-auto pb-4 mb-4 -mx-5 px-5 scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
         {logTypes.map((type) => {
           const Icon = type.icon
           const isActive = activeType === type.id
@@ -133,46 +136,37 @@ export default function AddLog() {
             <button
               key={type.id}
               onClick={() => setActiveType(type.id)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                borderRadius: '16px',
-                background: isActive ? type.color : 'var(--bg-secondary)',
-                color: isActive ? '#fff' : 'var(--text-secondary)',
-                border: 'none',
-                minWidth: '80px',
-                transition: 'all 0.2s ease',
-                flexShrink: 0
-              }}
+              className={`flex flex-col items-center gap-2 p-3 rounded-2xl min-w-[80px] flex-shrink-0 transition-all ${
+                isActive 
+                  ? `${type.activeBg} ${type.activeText} shadow-md` 
+                  : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+              }`}
             >
-              <Icon size={24} />
-              <span style={{ fontSize: '0.85rem', fontWeight: isActive ? 600 : 500 }}>{type.label}</span>
+              <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+              <span className={`text-xs ${isActive ? 'font-bold' : 'font-semibold'}`}>{type.label}</span>
             </button>
           )
         })}
       </div>
 
-      <form onSubmit={handleSubmit} className="auth-form" style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: '24px' }}>
-        {error && <div className="error-alert">{error}</div>}
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col gap-5">
+        {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
 
-        <div className="form-group">
-          <label>Date</label>
+        <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Date</label>
           <input 
             type="date" 
             name="date" 
             value={formData.date} 
             onChange={handleInputChange} 
             required 
-            style={{ padding: '16px', borderRadius: '12px' }}
+            className="w-full px-4 py-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all"
           />
         </div>
 
         {['fuel', 'service', 'upgrade'].includes(activeType) && (
-          <div className="form-group">
-            <label>Odometer (km)</label>
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Odometer (km)</label>
             <input 
               type="number" 
               name="odometer" 
@@ -180,14 +174,14 @@ export default function AddLog() {
               onChange={handleInputChange} 
               required 
               placeholder="e.g. 15200"
-              style={{ padding: '16px', borderRadius: '12px' }}
+              className="w-full px-4 py-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all placeholder:text-zinc-400"
             />
           </div>
         )}
 
         {['service', 'upgrade', 'tax', 'note'].includes(activeType) && (
-          <div className="form-group">
-            <label>{activeType === 'note' ? 'Title' : 'Description'}</label>
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{activeType === 'note' ? 'Title' : 'Description'}</label>
             <input 
               type="text" 
               name="description" 
@@ -195,15 +189,15 @@ export default function AddLog() {
               onChange={handleInputChange} 
               required 
               placeholder="What was done?"
-              style={{ padding: '16px', borderRadius: '12px' }}
+              className="w-full px-4 py-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all placeholder:text-zinc-400"
             />
           </div>
         )}
 
         {activeType === 'fuel' && (
-          <div className="dashboard-grid" style={{ gap: '16px', marginBottom: '16px' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Liters</label>
+          <div className="flex gap-4">
+            <div className="space-y-1.5 flex-1">
+              <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Liters</label>
               <input 
                 type="number" 
                 step="0.01" 
@@ -212,11 +206,11 @@ export default function AddLog() {
                 onChange={handleInputChange} 
                 required 
                 placeholder="0.00"
-                style={{ padding: '16px', borderRadius: '12px' }}
+                className="w-full px-4 py-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all placeholder:text-zinc-400"
               />
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Cost</label>
+            <div className="space-y-1.5 flex-1">
+              <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Cost</label>
               <input 
                 type="number" 
                 step="0.01" 
@@ -225,15 +219,15 @@ export default function AddLog() {
                 onChange={handleInputChange} 
                 required 
                 placeholder="0.00"
-                style={{ padding: '16px', borderRadius: '12px' }}
+                className="w-full px-4 py-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all placeholder:text-zinc-400"
               />
             </div>
           </div>
         )}
 
         {['service', 'upgrade', 'tax'].includes(activeType) && (
-          <div className="form-group">
-            <label>Cost</label>
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Cost</label>
             <input 
               type="number" 
               step="0.01" 
@@ -241,70 +235,55 @@ export default function AddLog() {
               value={formData.cost} 
               onChange={handleInputChange} 
               placeholder="0.00 (Optional)"
-              style={{ padding: '16px', borderRadius: '12px' }}
+              className="w-full px-4 py-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all placeholder:text-zinc-400"
             />
           </div>
         )}
 
         {activeType === 'fuel' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px', padding: '16px', background: 'var(--bg-primary)', borderRadius: '12px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.95rem' }} className="cursor-pointer">
+          <div className="flex flex-col gap-4 p-5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
+            <label className="flex items-center gap-3 cursor-pointer">
               <input 
                 type="checkbox" 
                 name="is_fill_to_full" 
                 checked={formData.is_fill_to_full} 
                 onChange={handleInputChange}
-                style={{ width: '20px', height: '20px', accentColor: 'var(--accent-primary)' }}
+                className="w-5 h-5 accent-orange-600 rounded bg-zinc-100 border-zinc-300"
               />
-              Filled to full tank
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Filled to full tank</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.95rem' }} className="cursor-pointer">
+            <label className="flex items-center gap-3 cursor-pointer">
               <input 
                 type="checkbox" 
                 name="missed_previous_fill" 
                 checked={formData.missed_previous_fill} 
                 onChange={handleInputChange}
-                style={{ width: '20px', height: '20px', accentColor: 'var(--accent-primary)' }}
+                className="w-5 h-5 accent-orange-600 rounded bg-zinc-100 border-zinc-300"
               />
-              Missed previous fill
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Missed previous fill</span>
             </label>
           </div>
         )}
 
-        <div className="form-group">
-          <label>Notes</label>
+        <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Notes</label>
           <textarea 
             name="notes" 
             value={formData.notes} 
             onChange={handleInputChange} 
             placeholder="Any additional details..."
-            style={{ padding: '16px', borderRadius: '12px', minHeight: '100px', resize: 'vertical' }}
+            className="w-full px-4 py-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all placeholder:text-zinc-400 min-h-[100px] resize-y"
           />
         </div>
 
         <button 
           type="submit" 
           disabled={loading} 
-          className="btn-primary w-full"
-          style={{ 
-            padding: '16px', 
-            borderRadius: '12px', 
-            fontSize: '1.1rem', 
-            fontWeight: 600,
-            background: logTypes.find(t => t.id === activeType)?.color,
-            marginTop: '8px'
-          }}
+          className="w-full py-4 mt-2 px-4 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center"
         >
           {loading ? 'Saving...' : `Save ${logTypes.find(t => t.id === activeType)?.label}`}
         </button>
       </form>
-      
-      {/* Hide scrollbar for type-selector in Webkit */}
-      <style>{`
-        .type-selector::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </div>
   )
 }
