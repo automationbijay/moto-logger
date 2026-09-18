@@ -4,6 +4,7 @@ import { useVehicle } from '../contexts/VehicleContext.jsx'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, Wrench, Fuel, Route, Wallet, Droplet, Gauge } from 'lucide-react'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
+import ExpensesChart from '../components/ExpensesChart.jsx'
 import { supabase } from '../lib/supabase.js'
 
 export default function Dashboard() {
@@ -16,6 +17,7 @@ export default function Dashboard() {
     distance: 0, 
     latestOdo: 0,
     totalCost: 0, 
+    costs: { fuel: 0, service: 0, upgrades: 0, tax: 0 },
     recentServiceStr: '-', 
     lastFillupStr: '-',
     reminders: [],
@@ -27,7 +29,7 @@ export default function Dashboard() {
 
     const fetchStats = async () => {
       if (!activeVehicle?.id) {
-        if (isMounted) setStats({ mileage: 0, distance: 0, latestOdo: 0, totalCost: 0, recentServiceStr: '-', lastFillupStr: '-', reminders: [], loading: false })
+        if (isMounted) setStats({ mileage: 0, distance: 0, latestOdo: 0, totalCost: 0, costs: { fuel: 0, service: 0, upgrades: 0, tax: 0 }, recentServiceStr: '-', lastFillupStr: '-', reminders: [], loading: false })
         return
       }
 
@@ -52,10 +54,13 @@ export default function Dashboard() {
       let recentServiceStr = 'No data'
 
       const sumCost = (res) => res.data?.reduce((acc, curr) => acc + (curr.cost || 0), 0) || 0
-      totalCost += sumCost(fuelRes)
-      totalCost += sumCost(serviceRes)
-      totalCost += sumCost(upgradeRes)
-      totalCost += sumCost(taxRes)
+      const fuelCost = sumCost(fuelRes)
+      const serviceCost = sumCost(serviceRes)
+      const upgradesCost = sumCost(upgradeRes)
+      const taxCost = sumCost(taxRes)
+      
+      totalCost = fuelCost + serviceCost + upgradesCost + taxCost
+      const costsBreakdown = { fuel: fuelCost, service: serviceCost, upgrades: upgradesCost, tax: taxCost }
 
       const odoRecords = odoRes.data || []
       if (odoRecords.length > 0) {
@@ -127,6 +132,7 @@ export default function Dashboard() {
           distance: distance,
           latestOdo: latestOdo,
           totalCost: totalCost,
+          costs: costsBreakdown,
           recentServiceStr,
           lastFillupStr,
           reminders: dashReminders,
@@ -244,6 +250,10 @@ export default function Dashboard() {
       </div>
 
 
+
+      <div className="mt-4">
+        <ExpensesChart costs={stats.costs} />
+      </div>
 
       <div className="mt-4">
         <div className="flex items-center gap-2 mb-3">
