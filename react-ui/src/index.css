@@ -1,27 +1,53 @@
 :root {
-  /* Premium Dark Theme Palette */
-  --bg-color: #0f172a;
-  --bg-surface: #1e293b;
-  --bg-surface-hover: #334155;
+  /* Light Theme Palette (Default) */
+  --bg-color: #FFFBEB;
+  --bg-surface: #FCF6F0;
+  --bg-surface-hover: #FAEEE1;
   
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
   --text-muted: #64748b;
   
-  --accent-primary: #3b82f6;
-  --accent-primary-hover: #2563eb;
-  --bg-primary-light: rgba(59, 130, 246, 0.15);
+  --accent-primary: #D97706;
+  --accent-primary-hover: #B45309;
+  --bg-primary-light: rgba(217, 119, 6, 0.15);
   
-  --accent-secondary: #8b5cf6;
-  --bg-secondary-light: rgba(139, 92, 246, 0.15);
+  --accent-secondary: #F59E0B;
+  --bg-secondary-light: rgba(245, 158, 11, 0.15);
   
-  --accent-warning: #f59e0b;
-  --accent-danger: #ef4444;
-  --accent-success: #10b981;
+  --accent-warning: #F59E0B;
+  --accent-danger: #DC2626;
+  --accent-success: #059669;
   
   --nav-height: 70px;
   --border-radius: 16px;
-  --border-color: rgba(255,255,255,0.08);
+  --border-color: #FAEEE1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Premium Dark Theme Palette */
+    --bg-color: #0f172a;
+    --bg-surface: #1e293b;
+    --bg-surface-hover: #334155;
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1; /* Improved contrast */
+    --text-muted: #94a3b8; /* Improved contrast */
+    
+    --accent-primary: #D97706;
+    --accent-primary-hover: #F59E0B;
+    --bg-primary-light: rgba(217, 119, 6, 0.15);
+    
+    --accent-secondary: #F59E0B;
+    --bg-secondary-light: rgba(245, 158, 11, 0.15);
+    
+    --accent-warning: #F59E0B;
+    --accent-danger: #DC2626;
+    --accent-success: #059669;
+    
+    --border-color: rgba(255,255,255,0.08);
+  }
 }
 
 * {
@@ -390,8 +416,9 @@ p { color: var(--text-secondary); }
   font-size: 1rem;
   transition: border-color 0.2s;
 }
-.form-group input:focus {
-  outline: none;
+.form-group input:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
   border-color: var(--accent-primary);
 }
 
@@ -511,3 +538,18 @@ select option {
   background: var(--bg-surface);
   color: white;
 }
+select:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-color: var(--accent-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+.cursor-pointer { cursor: pointer; }

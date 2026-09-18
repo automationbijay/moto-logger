@@ -2,7 +2,7 @@
 
 ## Architecture & Tech Stack
 - **Backend (BaaS)**: Supabase will be used as the Backend-as-a-Service for all components.
-- **Client Application**: The primary client will be a native Android App designed for motorcycle logs usage.
+- **Client Application**: The initial client will be a React + Capacitor app for rapid iteration on UI/UX and DB. The primary client will eventually transition to a native Android App once finalized.
 
 ## Context
 - **Target Audience**: Nepali motorcycle users.

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Wrench, Fuel } from 'lucide-react'
+import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 
 export default function Logs() {
   const [activeTab, setActiveTab] = useState('all') // 'all', 'service', 'fuel'
@@ -21,6 +22,7 @@ export default function Logs() {
           <h1>Logs</h1>
           <p>Service and Fuel history</p>
         </div>
+        <VehicleSwitcher />
       </header>
 
       <div className="tabs">

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext.jsx'
+import { VehicleProvider } from './contexts/VehicleContext.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 import { Layout } from './components/Layout.jsx'
 
@@ -7,28 +8,41 @@ import { Layout } from './components/Layout.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Logs from './pages/Logs.jsx'
 import Profile from './pages/Profile.jsx'
+import AddLog from './pages/AddLog.jsx'
+import EditProfile from './pages/EditProfile.jsx'
+import CurrencySettings from './pages/CurrencySettings.jsx'
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
+
+import NotesReminders from './pages/NotesReminders.jsx'
+import VehicleForm from './pages/VehicleForm.jsx'
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          
-          <Route element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/logs" element={<Logs />} />
-            <Route path="/profile" element={<Profile />} />
-          </Route>
-        </Routes>
-      </Router>
+      <VehicleProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            
+            <Route element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/logs" element={<Logs />} />
+              <Route path="/notes" element={<NotesReminders />} />
+              <Route path="/add-log" element={<AddLog />} />
+              <Route path="/vehicle" element={<VehicleForm />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/currency" element={<CurrencySettings />} />
+            </Route>
+          </Routes>
+        </Router>
+      </VehicleProvider>
     </AuthProvider>
   )
 }

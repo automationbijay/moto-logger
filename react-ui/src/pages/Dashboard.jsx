@@ -1,27 +1,25 @@
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useVehicle } from '../contexts/VehicleContext.jsx'
+import { useNavigate } from 'react-router-dom'
 import { Bike, AlertCircle, Wrench, Fuel } from 'lucide-react'
+import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 
 export default function Dashboard() {
   const { user } = useAuth()
+  const { activeVehicle } = useVehicle()
+  const navigate = useNavigate()
 
   return (
     <div className="page-container fade-in">
-      <header className="page-header">
-        <h1>Dashboard</h1>
-        <p>Welcome back, {user?.email}</p>
+      <header className="page-header flex-between">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Welcome back, {user?.email}</p>
+        </div>
+        <VehicleSwitcher />
       </header>
 
       <div className="dashboard-grid">
-        <div className="stat-card">
-          <div className="stat-icon-wrapper">
-            <Bike className="text-primary" size={24} />
-          </div>
-          <div className="stat-details">
-            <h3>My Motorcycles</h3>
-            <p className="stat-value">1 Active</p>
-          </div>
-        </div>
-        
         <div className="stat-card">
           <div className="stat-icon-wrapper">
             <Wrench className="text-secondary" size={24} />
