@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { VehicleProvider } from './contexts/VehicleContext.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
@@ -40,6 +40,9 @@ function App() {
               <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/currency" element={<CurrencySettings />} />
             </Route>
+            
+            {/* Catch-all route to redirect 404s to home page */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
       </VehicleProvider>
