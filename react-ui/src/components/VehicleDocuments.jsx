@@ -331,8 +331,8 @@ export default function VehicleDocuments() {
       
       {/* Fullscreen Image Viewer Modal */}
       {viewImage && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4" onClick={() => setViewImage(null)}>
-          <div className="absolute top-4 w-full px-4 flex justify-between items-center z-50">
+        <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4" onClick={() => setViewImage(null)}>
+          <div className="absolute top-4 w-full px-4 flex justify-between items-center z-[110]">
             <div className="text-white font-medium">{viewImage.label}</div>
             <button 
               className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full backdrop-blur-sm transition-colors"
@@ -351,7 +351,7 @@ export default function VehicleDocuments() {
             />
           </div>
           
-          <div className="absolute bottom-8 flex gap-4 z-50">
+          <div className="absolute bottom-12 flex gap-4 z-[110]">
             <button 
               onClick={(e) => { e.stopPropagation(); handleDownload(viewImage.url, viewImage.label); }}
               className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full backdrop-blur-sm transition-colors flex items-center gap-2 font-medium"
