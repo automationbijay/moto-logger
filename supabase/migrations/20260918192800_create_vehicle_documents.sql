@@ -38,7 +38,7 @@ CREATE POLICY "Users can delete their own vehicle documents"
 CREATE TRIGGER update_vehicle_documents_updated_at
   BEFORE UPDATE ON public.vehicle_documents
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE FUNCTION set_updated_at();
 
 -- Create storage bucket if not exists
 INSERT INTO storage.buckets (id, name, public)
