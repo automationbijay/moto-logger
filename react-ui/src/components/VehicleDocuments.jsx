@@ -40,18 +40,24 @@ export default function VehicleDocuments() {
     }
     
     const docMap = {};
-    for (const doc of data || []) {
-      const { data: signedUrlData } = await supabase
-        .storage
-        .from('vehicle_documents')
-        .createSignedUrl(doc.storage_path, 3600);
-        
-      if (!docMap[doc.doc_type]) docMap[doc.doc_type] = [];
+    for (const row of data || []) {
+      if (!docMap[row.doc_type]) docMap[row.doc_type] = [];
       
-      docMap[doc.doc_type].push({
-        ...doc,
-        publicUrl: signedUrlData?.signedUrl
-      });
+      const paths = row.storage_paths || [];
+      for (const path of paths) {
+        if (!path) continue;
+        const { data: signedUrlData } = await supabase
+          .storage
+          .from('vehicle_documents')
+          .createSignedUrl(path, 3600);
+          
+        docMap[row.doc_type].push({
+          id: row.id,
+          doc_type: row.doc_type,
+          storage_path: path,
+          publicUrl: signedUrlData?.signedUrl
+        });
+      }
     }
     setDocuments(docMap);
     setLoading(false);
@@ -85,23 +91,37 @@ export default function VehicleDocuments() {
         
       if (uploadError) throw uploadError;
       
-      const { error: dbError } = await supabase
+      // Fetch existing row for this docType
+      const { data: existingRow } = await supabase
         .from('vehicle_documents')
-        .insert({
-          user_id: userId,
-          vehicle_id: activeVehicle.id,
-          doc_type: docType,
-          storage_path: uploadData.path
-        });
+        .select('id, storage_paths')
+        .eq('vehicle_id', activeVehicle.id)
+        .eq('doc_type', docType)
+        .maybeSingle();
 
-      if (dbError) throw dbError;
+      if (existingRow) {
+        const newPaths = [...(existingRow.storage_paths || []), uploadData.path];
+        const { error: dbError } = await supabase
+          .from('vehicle_documents')
+          .update({ storage_paths: newPaths })
+          .eq('id', existingRow.id);
+        if (dbError) throw dbError;
+      } else {
+        const { error: dbError } = await supabase
+          .from('vehicle_documents')
+          .insert({
+            user_id: userId,
+            vehicle_id: activeVehicle.id,
+            doc_type: docType,
+            storage_paths: [uploadData.path]
+          });
+        if (dbError) throw dbError;
+      }
       
       await fetchDocuments();
     } catch (error) {
       console.error('Error uploading document:', error);
-      alert(error.message?.includes('duplicate key') 
-        ? 'Please run the database migration to allow multiple photos first!' 
-        : 'Failed to upload document');
+      alert('Failed to upload document: ' + (error.message || 'Unknown error'));
     } finally {
       setUploadingState(prev => ({ ...prev, [docType]: false }));
       if (fileInputRefs.current[docType]) {
@@ -114,8 +134,24 @@ export default function VehicleDocuments() {
     if (!confirm('Are you sure you want to delete this photo?')) return;
     
     try {
+      // First update the database to remove the path
+      const { data: row } = await supabase
+        .from('vehicle_documents')
+        .select('storage_paths')
+        .eq('id', docId)
+        .single();
+        
+      if (row) {
+        const newPaths = (row.storage_paths || []).filter(p => p !== storagePath);
+        if (newPaths.length === 0) {
+          await supabase.from('vehicle_documents').delete().eq('id', docId);
+        } else {
+          await supabase.from('vehicle_documents').update({ storage_paths: newPaths }).eq('id', docId);
+        }
+      }
+      
+      // Then remove the actual file
       await supabase.storage.from('vehicle_documents').remove([storagePath]);
-      await supabase.from('vehicle_documents').delete().eq('id', docId);
       
       setViewImage(null);
       fetchDocuments();
