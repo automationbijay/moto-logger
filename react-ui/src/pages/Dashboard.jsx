@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useVehicle } from '../contexts/VehicleContext.jsx'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, Wrench, Fuel, Route, Wallet, Droplet } from 'lucide-react'
+import { AlertCircle, Wrench, Fuel, Route, Wallet, Droplet, Gauge } from 'lucide-react'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 import { supabase } from '../lib/supabase.js'
 
@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ 
     mileage: 0, 
     distance: 0, 
+    latestOdo: 0,
     totalCost: 0, 
     recentServiceStr: '-', 
     lastFillupStr: '-',
@@ -26,7 +27,7 @@ export default function Dashboard() {
 
     const fetchStats = async () => {
       if (!activeVehicle?.id) {
-        if (isMounted) setStats({ mileage: 0, distance: 0, totalCost: 0, recentServiceStr: '-', lastFillupStr: '-', reminders: [], loading: false })
+        if (isMounted) setStats({ mileage: 0, distance: 0, latestOdo: 0, totalCost: 0, recentServiceStr: '-', lastFillupStr: '-', reminders: [], loading: false })
         return
       }
 
@@ -46,6 +47,7 @@ export default function Dashboard() {
       let totalCost = 0
       let distance = 0
       let mileage = 0
+      let latestOdo = 0
       let lastFillupStr = 'No data'
       let recentServiceStr = 'No data'
 
@@ -59,6 +61,7 @@ export default function Dashboard() {
       if (odoRecords.length > 0) {
         const firstOdo = odoRecords[0].odometer || 0
         const lastOdo = odoRecords[odoRecords.length - 1].odometer || 0
+        latestOdo = lastOdo
         distance = Math.max(0, lastOdo - firstOdo)
       }
 
@@ -122,6 +125,7 @@ export default function Dashboard() {
         setStats({
           mileage: mileage > 0 ? mileage.toFixed(1) : '-',
           distance: distance,
+          latestOdo: latestOdo,
           totalCost: totalCost,
           recentServiceStr,
           lastFillupStr,
@@ -186,6 +190,20 @@ export default function Dashboard() {
             <div className="text-right">
               <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
                 {stats.loading ? '...' : stats.distance.toLocaleString()} <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">km</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl text-indigo-600 dark:text-indigo-400">
+                <Gauge size={24} />
+              </div>
+              <p className="font-medium text-zinc-600 dark:text-zinc-300">Odometer</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                {stats.loading ? '...' : stats.latestOdo.toLocaleString()} <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">km</span>
               </p>
             </div>
           </div>
