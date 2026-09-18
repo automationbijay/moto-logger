@@ -164,54 +164,98 @@ export default function VehicleDocuments() {
                 </span>
               </div>
               
-              <div className="flex gap-3 overflow-x-auto pb-1 -mx-2 px-2 snap-x">
-                {docs.map((doc, idx) => (
-                  <div 
-                    key={doc.id}
-                    className="w-24 h-20 rounded-xl shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 cursor-pointer relative group snap-start"
-                    onClick={() => setViewImage({ url: doc.publicUrl, id: doc.id, path: doc.storage_path, label })}
-                  >
-                    <img src={doc.publicUrl} alt={`${label} ${idx + 1}`} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-white text-[10px] font-medium uppercase tracking-wider">View</span>
-                    </div>
+              {docs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6 px-4 bg-zinc-50 dark:bg-zinc-800/50 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl">
+                  <div className="bg-white dark:bg-zinc-800 p-2.5 rounded-full shadow-sm border border-zinc-100 dark:border-zinc-700 mb-3">
+                    <ImageIcon size={20} className="text-zinc-400" />
                   </div>
-                ))}
-                
-                {/* Upload Buttons */}
-                <div className="flex items-center gap-2 shrink-0 snap-start pl-1">
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    capture="environment"
-                    className="hidden" 
-                    ref={el => fileInputRefs.current[`${id}_capture`] = el}
-                    onChange={(e) => handleFileUpload(e, id)}
-                  />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    ref={el => fileInputRefs.current[`${id}_upload`] = el}
-                    onChange={(e) => handleFileUpload(e, id)}
-                  />
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-4 text-center">No photos uploaded yet</p>
                   
-                  <button 
-                    disabled={isUploading}
-                    onClick={() => fileInputRefs.current[`${id}_capture`]?.click()}
-                    className="w-12 h-20 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
-                  >
-                    {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
-                  </button>
-                  <button 
-                    disabled={isUploading}
-                    onClick={() => fileInputRefs.current[`${id}_upload`]?.click()}
-                    className="w-12 h-20 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
-                  >
-                    {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment"
+                      className="hidden" 
+                      ref={el => fileInputRefs.current[`${id}_capture`] = el}
+                      onChange={(e) => handleFileUpload(e, id)}
+                    />
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      ref={el => fileInputRefs.current[`${id}_upload`] = el}
+                      onChange={(e) => handleFileUpload(e, id)}
+                    />
+                    
+                    <button 
+                      disabled={isUploading}
+                      onClick={() => fileInputRefs.current[`${id}_capture`]?.click()}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 shadow-sm transition-colors disabled:opacity-50"
+                    >
+                      {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                      Camera
+                    </button>
+                    <button 
+                      disabled={isUploading}
+                      onClick={() => fileInputRefs.current[`${id}_upload`]?.click()}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 shadow-sm transition-colors disabled:opacity-50"
+                    >
+                      {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                      Upload
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex gap-3 overflow-x-auto pb-1 -mx-2 px-2 snap-x">
+                  {docs.map((doc, idx) => (
+                    <div 
+                      key={doc.id}
+                      className="w-24 h-20 rounded-xl shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 cursor-pointer relative group snap-start"
+                      onClick={() => setViewImage({ url: doc.publicUrl, id: doc.id, path: doc.storage_path, label })}
+                    >
+                      <img src={doc.publicUrl} alt={`${label} ${idx + 1}`} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="text-white text-[10px] font-medium uppercase tracking-wider">View</span>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Upload Buttons */}
+                  <div className="flex items-center gap-2 shrink-0 snap-start pl-1">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment"
+                      className="hidden" 
+                      ref={el => fileInputRefs.current[`${id}_capture`] = el}
+                      onChange={(e) => handleFileUpload(e, id)}
+                    />
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      ref={el => fileInputRefs.current[`${id}_upload`] = el}
+                      onChange={(e) => handleFileUpload(e, id)}
+                    />
+                    
+                    <button 
+                      disabled={isUploading}
+                      onClick={() => fileInputRefs.current[`${id}_capture`]?.click()}
+                      className="w-12 h-20 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
+                    >
+                      {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+                    </button>
+                    <button 
+                      disabled={isUploading}
+                      onClick={() => fileInputRefs.current[`${id}_upload`]?.click()}
+                      className="w-12 h-20 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
+                    >
+                      {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
