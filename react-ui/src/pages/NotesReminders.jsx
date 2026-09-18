@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { FileText, Calendar, Pin } from 'lucide-react'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
+import VehicleDocuments from '../components/VehicleDocuments.jsx'
 import { useVehicle } from '../contexts/VehicleContext.jsx'
 import { supabase } from '../lib/supabase.js'
 
@@ -76,13 +77,15 @@ export default function NotesReminders() {
     <div className="flex flex-col gap-6">
       <header className="flex justify-between items-center mb-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Notes & Reminders</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Documents & Notes</h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Your vehicle records</p>
         </div>
         <VehicleSwitcher />
       </header>
 
-      <div className="mt-2">
+      <VehicleDocuments />
+
+      <div className="mt-6">
         {loading ? (
           <p className="text-zinc-500 text-center py-4">Loading...</p>
         ) : futureNotes.length === 0 && pastNotes.length === 0 ? (
