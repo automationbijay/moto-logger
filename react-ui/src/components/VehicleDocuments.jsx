@@ -280,6 +280,10 @@ export default function VehicleDocuments() {
                   )}
                 </div>
               )}
+            </div>
+          );
+        })}
+      </div>
       
       {/* Fullscreen Image Viewer Modal */}
       {viewImage && (
