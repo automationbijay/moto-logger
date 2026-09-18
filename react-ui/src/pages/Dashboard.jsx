@@ -35,13 +35,15 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ mileage: 0, distance: 0, totalCost: 0, loading: true })
 
   useEffect(() => {
+    let isMounted = true
+
     const fetchStats = async () => {
       if (!activeVehicle?.id) {
-        setStats({ mileage: 0, distance: 0, totalCost: 0, loading: false })
+        if (isMounted) setStats({ mileage: 0, distance: 0, totalCost: 0, loading: false })
         return
       }
 
-      setStats(prev => ({ ...prev, loading: true }))
+      if (isMounted) setStats(prev => ({ ...prev, loading: true }))
       
       const vId = activeVehicle.id
       
@@ -79,15 +81,32 @@ export default function Dashboard() {
         }
       }
 
-      setStats({
-        mileage: mileage > 0 ? mileage.toFixed(1) : '-',
-        distance: distance,
-        totalCost: totalCost,
-        loading: false
-      })
+      if (isMounted) {
+        setStats({
+          mileage: mileage > 0 ? mileage.toFixed(1) : '-',
+          distance: distance,
+          totalCost: totalCost,
+          loading: false
+        })
+      }
     }
 
     fetchStats()
+
+    if (!activeVehicle?.id) return
+
+    const channel = supabase
+      .channel('dashboard_stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fuel_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, () => fetchStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'service_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, () => fetchStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'upgrade_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, () => fetchStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tax_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, () => fetchStats())
+      .subscribe()
+
+    return () => {
+      isMounted = false
+      supabase.removeChannel(channel)
+    }
   }, [activeVehicle?.id])
 
   return (
