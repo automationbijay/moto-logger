@@ -14,7 +14,7 @@ export default function AddLog() {
   const logTypes = [
     { id: 'fuel', label: 'Fuel', icon: Fuel, activeBg: 'bg-orange-500', activeText: 'text-white' },
     { id: 'service', label: 'Service', icon: Wrench, activeBg: 'bg-blue-500', activeText: 'text-white' },
-    { id: 'tax', label: 'Tax', icon: Receipt, activeBg: 'bg-amber-500', activeText: 'text-white' },
+    { id: 'tax', label: 'Tax & Insurance', icon: Receipt, activeBg: 'bg-amber-500', activeText: 'text-white' },
   ]
 
   const initialType = searchParams.get('type') || 'fuel'

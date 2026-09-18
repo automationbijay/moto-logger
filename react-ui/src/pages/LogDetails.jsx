@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, Trash2, Edit3, Fuel, Wrench, Calendar, MapPin, DollarSign, FileText } from 'lucide-react'
+import { ChevronLeft, Trash2, Edit3, Fuel, Wrench, Calendar, MapPin, DollarSign, FileText, Receipt } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
@@ -28,6 +28,7 @@ export default function LogDetails() {
         let table = ''
         if (type === 'fuel') table = 'fuel_records'
         else if (type === 'service') table = 'service_records'
+        else if (type === 'tax') table = 'tax_records'
         else {
           navigate('/logs')
           return
@@ -56,7 +57,7 @@ export default function LogDetails() {
     
     setDeleting(true)
     try {
-      const table = type === 'fuel' ? 'fuel_records' : 'service_records'
+      const table = type === 'fuel' ? 'fuel_records' : type === 'service' ? 'service_records' : 'tax_records'
       const { error: dbError } = await supabase
         .from(table)
         .delete()
@@ -125,12 +126,16 @@ export default function LogDetails() {
       <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-6">
         
         <div className="flex items-center gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-6">
-          <div className={`p-4 rounded-2xl ${type === 'service' ? 'bg-orange-100 dark:bg-orange-500/10 text-orange-600' : 'bg-blue-100 dark:bg-blue-500/10 text-blue-600'}`}>
-            {type === 'service' ? <Wrench size={32} /> : <Fuel size={32} />}
+          <div className={`p-4 rounded-2xl ${
+            type === 'service' ? 'bg-orange-100 dark:bg-orange-500/10 text-orange-600' : 
+            type === 'tax' ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-600' :
+            'bg-blue-100 dark:bg-blue-500/10 text-blue-600'
+          }`}>
+            {type === 'service' ? <Wrench size={32} /> : type === 'tax' ? <Receipt size={32} /> : <Fuel size={32} />}
           </div>
           <div>
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-              {type === 'service' ? log.description || 'Service' : `${log.liters}L Fuel`}
+              {type === 'service' ? log.description || 'Service' : type === 'tax' ? log.description || 'Tax' : `${log.liters}L Fuel`}
             </h2>
             <p className="text-lg font-medium text-zinc-600 dark:text-zinc-400 mt-1">
               {currencySymbol}{log.cost}

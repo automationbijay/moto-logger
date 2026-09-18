@@ -214,27 +214,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 flex items-center gap-4 active:scale-[0.98] transition-transform">
-          <div className="bg-orange-100 dark:bg-orange-500/10 p-3 rounded-xl text-orange-600">
-            <Wrench size={24} />
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Recent Service</h3>
-            <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-1">{stats.loading ? '...' : stats.recentServiceStr}</p>
-          </div>
-        </div>
 
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 flex items-center gap-4 active:scale-[0.98] transition-transform">
-          <div className="bg-blue-100 dark:bg-blue-500/10 p-3 rounded-xl text-blue-600">
-            <Fuel size={24} />
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Last Fill-up</h3>
-            <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-1">{stats.loading ? '...' : stats.lastFillupStr}</p>
-          </div>
-        </div>
-      </div>
 
       <div className="mt-4">
         <div className="flex items-center gap-2 mb-3">

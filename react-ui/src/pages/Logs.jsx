@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Wrench, Fuel } from 'lucide-react'
+import { Wrench, Fuel, Receipt } from 'lucide-react'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 import { useVehicle } from '../contexts/VehicleContext.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
@@ -12,6 +12,7 @@ export default function Logs() {
   const { currencySymbol } = useAuth()
   const [activeTab, setActiveTab] = useState('all') // 'all', 'service', 'fuel'
   const [logs, setLogs] = useState([])
+  const [stats, setStats] = useState({ recentServiceStr: 'No data', lastFillupStr: 'No data' })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export default function Logs() {
       if (!activeVehicle?.id) {
         if (isMounted) {
           setLogs([])
+          setStats({ recentServiceStr: 'No data', lastFillupStr: 'No data' })
           setLoading(false)
         }
         return
@@ -28,9 +30,10 @@ export default function Logs() {
 
       if (isMounted) setLoading(true)
 
-      const [fuelRes, serviceRes] = await Promise.all([
+      const [fuelRes, serviceRes, taxRes] = await Promise.all([
         supabase.from('fuel_records').select('*').eq('vehicle_id', activeVehicle.id),
-        supabase.from('service_records').select('*').eq('vehicle_id', activeVehicle.id)
+        supabase.from('service_records').select('*').eq('vehicle_id', activeVehicle.id),
+        supabase.from('tax_records').select('*').eq('vehicle_id', activeVehicle.id)
       ])
 
       if (isMounted) {
@@ -51,8 +54,48 @@ export default function Logs() {
           odometerStr: `${s.odometer} km`
         }))
 
-        const combined = [...fuels, ...services].sort((a, b) => new Date(b.date) - new Date(a.date))
+        const taxes = (taxRes.data || []).map(t => ({
+          ...t,
+          type: 'tax',
+          title: t.description || 'Tax',
+          costStr: `${currencySymbol}${t.cost}`,
+          odometerStr: ''
+        }))
+
+        // Sort combined logs descending by date
+        const combined = [...fuels, ...services, ...taxes].sort((a, b) => new Date(b.date) - new Date(a.date))
         setLogs(combined)
+
+        // Calculate stats
+        let recentServiceStr = 'No data'
+        let lastFillupStr = 'No data'
+
+        // Fuel and service arrays are already fetched, let's sort them ascending to get the last one
+        const sortedFuels = [...fuels].sort((a, b) => a.odometer - b.odometer)
+        if (sortedFuels.length > 0) {
+          const lastFuel = sortedFuels[sortedFuels.length - 1]
+          if (lastFuel.date) {
+            const fillDate = new Date(lastFuel.date)
+            const today = new Date()
+            const diffTime = Math.abs(today - fillDate)
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+            lastFillupStr = diffDays === 0 ? 'today' : `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
+          }
+        }
+
+        const sortedServices = [...services].sort((a, b) => new Date(a.date) - new Date(b.date))
+        if (sortedServices.length > 0) {
+          const lastService = sortedServices[sortedServices.length - 1]
+          if (lastService.date) {
+            const serviceDate = new Date(lastService.date)
+            const today = new Date()
+            const diffTime = Math.abs(today - serviceDate)
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+            recentServiceStr = diffDays === 0 ? 'today' : `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
+          }
+        }
+
+        setStats({ recentServiceStr, lastFillupStr })
         setLoading(false)
       }
     }
@@ -71,6 +114,24 @@ export default function Logs() {
         </div>
         <VehicleSwitcher />
       </header>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+          <div className="bg-orange-100 dark:bg-orange-500/10 p-2.5 rounded-full text-orange-600 mb-2">
+            <Wrench size={20} />
+          </div>
+          <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Recent Service</h3>
+          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">{loading ? '...' : stats.recentServiceStr}</p>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+          <div className="bg-blue-100 dark:bg-blue-500/10 p-2.5 rounded-full text-blue-600 mb-2">
+            <Fuel size={20} />
+          </div>
+          <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Last Fill-up</h3>
+          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">{loading ? '...' : stats.lastFillupStr}</p>
+        </div>
+      </div>
 
       <div className="flex p-1 bg-zinc-100 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800">
         <button 
@@ -91,6 +152,12 @@ export default function Logs() {
         >
           Fuel
         </button>
+        <button 
+          className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeTab === 'tax' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+          onClick={() => setActiveTab('tax')}
+        >
+          Tax
+        </button>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -105,8 +172,12 @@ export default function Logs() {
               className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition-transform cursor-pointer"
               onClick={() => navigate(`/log-details?type=${log.type}&id=${log.id}`)}
             >
-              <div className={`p-3 rounded-xl ${log.type === 'service' ? 'bg-orange-100 dark:bg-orange-500/10 text-orange-600' : 'bg-blue-100 dark:bg-blue-500/10 text-blue-600'}`}>
-                {log.type === 'service' ? <Wrench size={20} /> : <Fuel size={20} />}
+              <div className={`p-3 rounded-xl ${
+                log.type === 'service' ? 'bg-orange-100 dark:bg-orange-500/10 text-orange-600' : 
+                log.type === 'tax' ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-600' :
+                'bg-blue-100 dark:bg-blue-500/10 text-blue-600'
+              }`}>
+                {log.type === 'service' ? <Wrench size={20} /> : log.type === 'tax' ? <Receipt size={20} /> : <Fuel size={20} />}
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 truncate">

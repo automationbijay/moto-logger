@@ -46,7 +46,7 @@ export const Layout = () => {
               </div>
             </button>
             <button onClick={() => handleAction('/add-log?type=tax')} className="flex items-center gap-3 active:scale-95 transition-transform group">
-              <span className="bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-xl text-sm font-semibold shadow-sm border border-zinc-200 dark:border-zinc-700">Tax</span>
+              <span className="bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-xl text-sm font-semibold shadow-sm border border-zinc-200 dark:border-zinc-700">Tax & Insurance</span>
               <div className="h-12 w-12 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-lg">
                 <Receipt size={20} />
               </div>
