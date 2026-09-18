@@ -1,0 +1,22 @@
+HTTP/1.1 200 OK
+
+HTTP/1.1 200 OK
+Content-Length: 2
+Alt-Svc: h3=":443"; ma=86400
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3cf82c1bb62b01a-KTM
+Content-Location: /fuel_records?select=%2A&vehicle_id=eq.d6d65789-ffdd-4644-8552-9dc0abf3b4ce
+Content-Profile: public
+Content-Range: */*
+Content-Type: application/json; charset=utf-8
+Date: Fri, 18 Sep 2026 10:01:41 GMT
+Sb-Gateway-Version: 1
+Sb-Project-Ref: dpnatfvndlyzvukryrgk
+Sb-Request-Id: 01a0b3f6-f51c-77b5-97d0-0f94f9e71c88
+Server: cloudflare
+Set-Cookie: __cf_bm=McqZugX65YGEeD2kk93hJ.qyqijM1UZIgGu.IqvDNIo-1789725701.4006655-1.0.1.1-zGQPTRgwe.ZBZQpKHzn7lqqBdE_FixUA0ctwfcc4Uwk9pkYJ39V6Aw91_at8jmEZPmpFEPF_JleGxbo8yYml2eo_pblM2OCxl0GwX8Eti7xgTjD6DeHckSExGtSAvL1d; HttpOnly; SameSite=None; Secure; Path=/; Domain=supabase.co; Expires=Fri, 18 Sep 2026 10:31:41 GMT
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+X-Content-Type-Options: nosniff
+X-Envoy-Attempt-Count: 1
+X-Envoy-Upstream-Service-Time: 5
+

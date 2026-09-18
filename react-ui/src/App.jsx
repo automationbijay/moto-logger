@@ -11,6 +11,7 @@ import Profile from './pages/Profile.jsx'
 import AddLog from './pages/AddLog.jsx'
 import EditProfile from './pages/EditProfile.jsx'
 import CurrencySettings from './pages/CurrencySettings.jsx'
+import LogDetails from './pages/LogDetails.jsx'
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
 
@@ -39,6 +40,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/currency" element={<CurrencySettings />} />
+              <Route path="/log-details" element={<LogDetails />} />
             </Route>
             
             {/* Catch-all route to redirect 404s to home page */}

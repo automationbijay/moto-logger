@@ -1,0 +1,7 @@
+{
+    "vehicle_id": "d6d65789-ffdd-4644-8552-9dc0abf3b4ce",
+    "description": "Next Engine Oil Change",
+    "metric": "Odometer",
+    "target_odometer": 15000,
+    "notes": "Change oil every 3000km"
+}

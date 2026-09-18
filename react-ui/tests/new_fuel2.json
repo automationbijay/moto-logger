@@ -1,0 +1,10 @@
+{
+    "vehicle_id": "d6d65789-ffdd-4644-8552-9dc0abf3b4ce",
+    "date": "2026-09-18",
+    "odometer": 12450,
+    "liters": 9.8,
+    "cost": 1725,
+    "is_fill_to_full": true,
+    "missed_previous_fill": false,
+    "notes": "Automated second fuel log for mileage test"
+}

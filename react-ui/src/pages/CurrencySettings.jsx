@@ -10,10 +10,10 @@ export default function CurrencySettings() {
   const [saving, setSaving] = useState(false)
 
   const currencies = [
-    { code: 'NPR', label: 'Nepali Rupee (NPR)' },
-    { code: 'USD', label: 'US Dollar (USD)' },
-    { code: 'EUR', label: 'Euro (EUR)' },
-    { code: 'INR', label: 'Indian Rupee (INR)' }
+    { code: 'NPR', label: 'Nepali Rupee (NPR)', symbol: 'रू' },
+    { code: 'USD', label: 'US Dollar (USD)', symbol: '$' },
+    { code: 'EUR', label: 'Euro (EUR)', symbol: '€' },
+    { code: 'INR', label: 'Indian Rupee (INR)', symbol: '₹' }
   ]
 
   const handleSelect = async (code) => {
@@ -56,9 +56,14 @@ export default function CurrencySettings() {
               }`}
               onClick={() => handleSelect(c.code)}
             >
-              <h4 className={`text-base ${isActive ? 'font-bold text-orange-700 dark:text-orange-400' : 'font-semibold text-zinc-700 dark:text-zinc-300'}`}>
-                {c.label}
-              </h4>
+              <div className="flex items-center gap-3">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full font-serif text-lg ${isActive ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+                  {c.symbol}
+                </div>
+                <h4 className={`text-base ${isActive ? 'font-bold text-orange-700 dark:text-orange-400' : 'font-semibold text-zinc-700 dark:text-zinc-300'}`}>
+                  {c.label}
+                </h4>
+              </div>
               {isActive && (
                 <div className="text-orange-600 bg-orange-100 dark:bg-orange-500/20 p-1.5 rounded-full">
                   <Check size={18} strokeWidth={3} />
