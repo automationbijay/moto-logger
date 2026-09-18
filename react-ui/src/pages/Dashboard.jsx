@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { AlertCircle, Wrench, Fuel, Route, Wallet, Droplet, Gauge } from 'lucide-react'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 import ExpensesChart from '../components/ExpensesChart.jsx'
+import MonthlyChart from '../components/MonthlyChart.jsx'
 import { supabase } from '../lib/supabase.js'
 
 export default function Dashboard() {
@@ -18,6 +19,7 @@ export default function Dashboard() {
     latestOdo: 0,
     totalCost: 0, 
     costs: { fuel: 0, service: 0, upgrades: 0, tax: 0 },
+    monthly: [],
     recentServiceStr: '-', 
     lastFillupStr: '-',
     reminders: [],
@@ -29,7 +31,7 @@ export default function Dashboard() {
 
     const fetchStats = async () => {
       if (!activeVehicle?.id) {
-        if (isMounted) setStats({ mileage: 0, distance: 0, latestOdo: 0, totalCost: 0, costs: { fuel: 0, service: 0, upgrades: 0, tax: 0 }, recentServiceStr: '-', lastFillupStr: '-', reminders: [], loading: false })
+        if (isMounted) setStats({ mileage: 0, distance: 0, latestOdo: 0, totalCost: 0, costs: { fuel: 0, service: 0, upgrades: 0, tax: 0 }, monthly: [], recentServiceStr: '-', lastFillupStr: '-', reminders: [], loading: false })
         return
       }
 
@@ -43,7 +45,7 @@ export default function Dashboard() {
         supabase.from('upgrade_records').select('cost').eq('vehicle_id', vId),
         supabase.from('tax_records').select('cost').eq('vehicle_id', vId),
         supabase.from('reminders').select('*').eq('vehicle_id', vId),
-        supabase.from('odometer_history').select('odometer').eq('vehicle_id', vId).order('odometer', { ascending: true })
+        supabase.from('odometer_history').select('odometer, date').eq('vehicle_id', vId).order('odometer', { ascending: true })
       ])
 
       let totalCost = 0
@@ -126,6 +128,52 @@ export default function Dashboard() {
         })
       }
 
+      const currentYear = new Date().getFullYear();
+      const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+        month: new Date(currentYear, i).toLocaleString('en-US', { month: 'long' }),
+        expense: 0,
+        minOdo: Infinity,
+        maxOdo: -Infinity,
+        distance: 0
+      }));
+
+      const processRecordsForMonthly = (records) => {
+        if (!records) return;
+        records.forEach(r => {
+          if (!r.date) return;
+          const d = new Date(r.date);
+          if (d.getFullYear() === currentYear) {
+            const m = d.getMonth();
+            monthlyData[m].expense += r.cost || 0;
+          }
+        });
+      };
+
+      processRecordsForMonthly(fuelRes.data);
+      processRecordsForMonthly(serviceRes.data);
+      processRecordsForMonthly(upgradeRes.data);
+      processRecordsForMonthly(taxRes.data);
+
+      if (odoRecords.length > 0) {
+        odoRecords.forEach(r => {
+          if (!r.date) return;
+          const d = new Date(r.date);
+          if (d.getFullYear() === currentYear && r.odometer) {
+            const m = d.getMonth();
+            if (r.odometer < monthlyData[m].minOdo) monthlyData[m].minOdo = r.odometer;
+            if (r.odometer > monthlyData[m].maxOdo) monthlyData[m].maxOdo = r.odometer;
+          }
+        });
+      }
+
+      monthlyData.forEach(m => {
+        if (m.minOdo !== Infinity && m.maxOdo !== -Infinity) {
+          m.distance = Math.max(0, m.maxOdo - m.minOdo);
+        } else {
+          m.distance = 0;
+        }
+      });
+
       if (isMounted) {
         setStats({
           mileage: mileage > 0 ? mileage.toFixed(1) : '-',
@@ -133,6 +181,7 @@ export default function Dashboard() {
           latestOdo: latestOdo,
           totalCost: totalCost,
           costs: costsBreakdown,
+          monthly: monthlyData,
           recentServiceStr,
           lastFillupStr,
           reminders: dashReminders,
@@ -253,6 +302,10 @@ export default function Dashboard() {
 
       <div className="mt-4">
         <ExpensesChart costs={stats.costs} />
+      </div>
+
+      <div className="mt-4">
+        <MonthlyChart data={stats.monthly} />
       </div>
 
       <div className="mt-4">
