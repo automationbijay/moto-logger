@@ -25,28 +25,46 @@ export default function NotesReminders() {
 
       if (isMounted) setLoading(true)
 
-      const { data } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('vehicle_id', activeVehicle.id)
-        .order('date', { ascending: false })
+      const [notesRes, remindersRes] = await Promise.all([
+        supabase.from('notes').select('*').eq('vehicle_id', activeVehicle.id).order('date', { ascending: false }),
+        supabase.from('reminders').select('*').eq('vehicle_id', activeVehicle.id)
+      ])
 
       if (isMounted) {
-        if (data) {
-          const todayStr = new Date().toISOString().split('T')[0]
+        setPastNotes(notesRes.data || [])
+        
+        let rems = remindersRes.data || []
+        
+        // Sort reminders by date, handle extracting time if present
+        rems = rems.map(r => {
+          let timePart = ''
+          let actualNotes = r.notes || ''
           
-          const future = data.filter(n => n.date > todayStr)
-          const past = data.filter(n => n.date <= todayStr)
+          if (actualNotes.startsWith('[TIME] ')) {
+            const newlineIndex = actualNotes.indexOf('\n')
+            if (newlineIndex !== -1) {
+              timePart = actualNotes.substring(7, newlineIndex)
+              actualNotes = actualNotes.substring(newlineIndex).trim()
+            } else {
+              timePart = actualNotes.substring(7)
+              actualNotes = ''
+            }
+          }
           
-          // Future notes (reminders) should ideally be sorted ascending by date (closest first)
-          future.sort((a, b) => a.date.localeCompare(b.date))
-          
-          setFutureNotes(future)
-          setPastNotes(past)
-        } else {
-          setFutureNotes([])
-          setPastNotes([])
-        }
+          return {
+            ...r,
+            display_time: timePart,
+            display_notes: actualNotes
+          }
+        })
+        
+        rems.sort((a, b) => {
+          const dateA = a.target_date || '9999-12-31'
+          const dateB = b.target_date || '9999-12-31'
+          return dateA.localeCompare(dateB)
+        })
+        
+        setFutureNotes(rems)
         setLoading(false)
       }
     }
@@ -59,7 +77,7 @@ export default function NotesReminders() {
       <header className="flex justify-between items-center mb-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Notes & Reminders</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Future dates are pinned as reminders</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Your vehicle records</p>
         </div>
         <VehicleSwitcher />
       </header>
@@ -85,17 +103,17 @@ export default function NotesReminders() {
                   <Pin size={14} className="text-orange-500" />
                   Upcoming Reminders
                 </h2>
-                {futureNotes.map(note => (
-                  <div key={note.id} className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 rounded-2xl p-5 relative overflow-hidden">
+                {futureNotes.map(reminder => (
+                  <div key={reminder.id} className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 rounded-2xl p-5 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
                     <div className="flex justify-between items-start">
-                      <h3 className="font-bold text-orange-900 dark:text-orange-100">{note.description}</h3>
+                      <h3 className="font-bold text-orange-900 dark:text-orange-100">{reminder.description}</h3>
                       <span className="inline-flex items-center gap-1 bg-white dark:bg-zinc-800 text-orange-600 dark:text-orange-400 text-xs px-2.5 py-1 rounded-full font-medium border border-orange-100 dark:border-orange-900/30 shadow-sm">
                         <Calendar size={12} />
-                        {note.date}
+                        {reminder.target_date} {reminder.display_time && `at ${reminder.display_time}`}
                       </span>
                     </div>
-                    {note.notes_content && <p className="text-sm text-orange-800/80 dark:text-orange-200/80 mt-2">{note.notes_content}</p>}
+                    {reminder.display_notes && <p className="text-sm text-orange-800/80 dark:text-orange-200/80 mt-2">{reminder.display_notes}</p>}
                   </div>
                 ))}
               </div>

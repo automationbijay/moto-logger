@@ -34,12 +34,12 @@ export default function Dashboard() {
       
       const vId = activeVehicle.id
       
-      const [fuelRes, serviceRes, upgradeRes, taxRes, notesRes] = await Promise.all([
+      const [fuelRes, serviceRes, upgradeRes, taxRes, remindersRes] = await Promise.all([
         supabase.from('fuel_records').select('odometer, liters, cost, date').eq('vehicle_id', vId).order('odometer', { ascending: true }),
         supabase.from('service_records').select('cost, date').eq('vehicle_id', vId).order('date', { ascending: true }),
         supabase.from('upgrade_records').select('cost').eq('vehicle_id', vId),
         supabase.from('tax_records').select('cost').eq('vehicle_id', vId),
-        supabase.from('notes').select('*').eq('vehicle_id', vId)
+        supabase.from('reminders').select('*').eq('vehicle_id', vId)
       ])
 
       let totalCost = 0
@@ -93,11 +93,19 @@ export default function Dashboard() {
         }
       }
 
-      let futureNotes = []
-      if (notesRes.data) {
-        const todayStr = new Date().toISOString().split('T')[0]
-        futureNotes = notesRes.data.filter(n => n.date > todayStr)
-        futureNotes.sort((a, b) => a.date.localeCompare(b.date))
+      let dashReminders = []
+      if (remindersRes.data) {
+        // Parse time if needed, although simple display is fine for dashboard
+        dashReminders = remindersRes.data.map(r => ({
+           ...r,
+           // format the output string slightly differently if needed
+        }))
+        // sort by target_date
+        dashReminders.sort((a, b) => {
+          const dateA = a.target_date || '9999-12-31'
+          const dateB = b.target_date || '9999-12-31'
+          return dateA.localeCompare(dateB)
+        })
       }
 
       if (isMounted) {
@@ -107,7 +115,7 @@ export default function Dashboard() {
           totalCost: totalCost,
           recentServiceStr,
           lastFillupStr,
-          reminders: futureNotes,
+          reminders: dashReminders,
           loading: false
         })
       }
