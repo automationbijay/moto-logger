@@ -32,6 +32,64 @@ export default function Dashboard() {
     fetchCurrency()
   }, [user])
 
+  const [stats, setStats] = useState({ mileage: 0, distance: 0, totalCost: 0, loading: true })
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!activeVehicle?.id) {
+        setStats({ mileage: 0, distance: 0, totalCost: 0, loading: false })
+        return
+      }
+
+      setStats(prev => ({ ...prev, loading: true }))
+      
+      const vId = activeVehicle.id
+      
+      const [fuelRes, serviceRes, upgradeRes, taxRes] = await Promise.all([
+        supabase.from('fuel_records').select('odometer, liters, cost').eq('vehicle_id', vId).order('odometer', { ascending: true }),
+        supabase.from('service_records').select('cost').eq('vehicle_id', vId),
+        supabase.from('upgrade_records').select('cost').eq('vehicle_id', vId),
+        supabase.from('tax_records').select('cost').eq('vehicle_id', vId)
+      ])
+
+      let totalCost = 0
+      let distance = 0
+      let mileage = 0
+
+      const sumCost = (res) => res.data?.reduce((acc, curr) => acc + (curr.cost || 0), 0) || 0
+      totalCost += sumCost(fuelRes)
+      totalCost += sumCost(serviceRes)
+      totalCost += sumCost(upgradeRes)
+      totalCost += sumCost(taxRes)
+
+      const fuels = fuelRes.data || []
+      if (fuels.length > 0) {
+        const firstOdo = fuels[0].odometer || 0
+        const lastOdo = fuels[fuels.length - 1].odometer || 0
+        distance = Math.max(0, lastOdo - firstOdo)
+        
+        if (fuels.length > 1) {
+          let totalLiters = 0
+          for (let i = 1; i < fuels.length; i++) {
+            totalLiters += fuels[i].liters || 0
+          }
+          if (totalLiters > 0) {
+            mileage = distance / totalLiters
+          }
+        }
+      }
+
+      setStats({
+        mileage: mileage > 0 ? mileage.toFixed(1) : '-',
+        distance: distance,
+        totalCost: totalCost,
+        loading: false
+      })
+    }
+
+    fetchStats()
+  }, [activeVehicle?.id])
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex justify-between items-center mb-2">
@@ -54,7 +112,7 @@ export default function Dashboard() {
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                16.7 <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">km/L</span>
+                {stats.loading ? '...' : stats.mileage} <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">km/L</span>
               </p>
             </div>
           </div>
@@ -68,7 +126,7 @@ export default function Dashboard() {
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                18,044 <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">km</span>
+                {stats.loading ? '...' : stats.distance.toLocaleString()} <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">km</span>
               </p>
             </div>
           </div>
@@ -83,9 +141,10 @@ export default function Dashboard() {
             <div className="text-right">
               <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 truncate max-w-[160px]">
                 {(() => {
+                  if (stats.loading) return '...'
                   const symbols = { NPR: 'रू', INR: '₹', USD: '$', EUR: '€' }
                   const symbol = symbols[currency] || currency
-                  const amount = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(7797.62)
+                  const amount = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(stats.totalCost)
                   return `${symbol} ${amount}`
                 })()}
               </p>
