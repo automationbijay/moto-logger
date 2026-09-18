@@ -6,9 +6,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 
 export default function CurrencySettings() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  
-  const [currency, setCurrency] = useState('NPR')
+  const { user, currency, setCurrency } = useAuth()
   const [saving, setSaving] = useState(false)
 
   const currencies = [
@@ -17,26 +15,6 @@ export default function CurrencySettings() {
     { code: 'EUR', label: 'Euro (EUR)' },
     { code: 'INR', label: 'Indian Rupee (INR)' }
   ]
-
-  useEffect(() => {
-    const fetchCurrency = async () => {
-      if (user) {
-        const { data } = await supabase
-          .from('user_profiles')
-          .select('currency')
-          .eq('id', user.id)
-          .single()
-          
-        if (data?.currency) {
-          setCurrency(data.currency)
-        } else {
-          const saved = localStorage.getItem('preferredCurrency')
-          if (saved) setCurrency(saved)
-        }
-      }
-    }
-    fetchCurrency()
-  }, [user])
 
   const handleSelect = async (code) => {
     setCurrency(code)

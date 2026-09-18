@@ -7,30 +7,9 @@ import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 import { supabase } from '../lib/supabase.js'
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user, currency, currencySymbol } = useAuth()
   const { activeVehicle } = useVehicle()
   const navigate = useNavigate()
-  const [currency, setCurrency] = useState('NPR')
-
-  useEffect(() => {
-    const fetchCurrency = async () => {
-      if (user) {
-        const { data } = await supabase
-          .from('user_profiles')
-          .select('currency')
-          .eq('id', user.id)
-          .single()
-          
-        if (data?.currency) {
-          setCurrency(data.currency)
-        } else {
-          const saved = localStorage.getItem('preferredCurrency')
-          if (saved) setCurrency(saved)
-        }
-      }
-    }
-    fetchCurrency()
-  }, [user])
 
   const [stats, setStats] = useState({ 
     mileage: 0, 
@@ -194,10 +173,8 @@ export default function Dashboard() {
               <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 truncate max-w-[160px]">
                 {(() => {
                   if (stats.loading) return '...'
-                  const symbols = { NPR: 'रू', INR: '₹', USD: '$', EUR: '€' }
-                  const symbol = symbols[currency] || currency
                   const amount = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(stats.totalCost)
-                  return `${symbol} ${amount}`
+                  return `${currencySymbol} ${amount}`
                 })()}
               </p>
             </div>

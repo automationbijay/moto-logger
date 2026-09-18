@@ -7,40 +7,9 @@ import { useNavigate } from 'react-router-dom'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 
 export default function Profile() {
-  const { user } = useAuth()
+  const { user, profile, currency } = useAuth()
   const { vehicles, activeVehicleId, changeActiveVehicle } = useVehicle()
   const navigate = useNavigate()
-  
-  const [currency, setCurrency] = useState('NPR')
-  const [profile, setProfile] = useState(null)
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (user) {
-        const { data } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-        
-        if (data) {
-          setProfile(data)
-          if (data.currency) {
-            setCurrency(data.currency)
-            localStorage.setItem('preferredCurrency', data.currency)
-          }
-        } else {
-          const savedCurrency = localStorage.getItem('preferredCurrency')
-          if (savedCurrency) {
-            setCurrency(savedCurrency)
-          } else {
-            localStorage.setItem('preferredCurrency', 'NPR')
-          }
-        }
-      }
-    }
-    fetchProfile()
-  }, [user])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()

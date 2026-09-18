@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useVehicle } from '../contexts/VehicleContext.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 import { ChevronLeft, Fuel, Wrench, ArrowUpCircle, FileText, Receipt } from 'lucide-react'
 
 export default function AddLog() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { currencySymbol } = useAuth()
   
   // Log types
   const logTypes = [
@@ -210,7 +212,7 @@ export default function AddLog() {
               />
             </div>
             <div className="space-y-1.5 flex-1">
-              <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Cost</label>
+              <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Cost ({currencySymbol})</label>
               <input 
                 type="number" 
                 step="0.01" 
@@ -227,7 +229,7 @@ export default function AddLog() {
 
         {['service', 'upgrade', 'tax'].includes(activeType) && (
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Cost</label>
+            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Cost ({currencySymbol})</label>
             <input 
               type="number" 
               step="0.01" 

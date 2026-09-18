@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { Wrench, Fuel } from 'lucide-react'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 import { useVehicle } from '../contexts/VehicleContext.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 
 export default function Logs() {
   const { activeVehicle } = useVehicle()
+  const { currencySymbol } = useAuth()
   const [activeTab, setActiveTab] = useState('all') // 'all', 'service', 'fuel'
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,7 +37,7 @@ export default function Logs() {
           type: 'fuel',
           title: `Fuel: ${f.liters}L`,
           amount: `${f.liters}L`,
-          costStr: `$${f.cost}`,
+          costStr: `${currencySymbol}${f.cost}`,
           odometerStr: `${f.odometer} km`
         }))
 
@@ -43,7 +45,7 @@ export default function Logs() {
           ...s,
           type: 'service',
           title: s.description || 'Service',
-          costStr: `$${s.cost}`,
+          costStr: `${currencySymbol}${s.cost}`,
           odometerStr: `${s.odometer} km`
         }))
 
