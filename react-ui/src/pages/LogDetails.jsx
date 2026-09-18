@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, Trash2, Fuel, Wrench, Calendar, MapPin, DollarSign, FileText } from 'lucide-react'
+import { ChevronLeft, Trash2, Edit3, Fuel, Wrench, Calendar, MapPin, DollarSign, FileText } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
@@ -101,14 +101,23 @@ export default function LogDetails() {
             <p className="text-xs text-zinc-500 capitalize">{type} Record</p>
           </div>
         </div>
-        <button 
-          onClick={handleDelete}
-          disabled={deleting}
-          className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition-colors disabled:opacity-50"
-          aria-label="Delete log"
-        >
-          <Trash2 size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => navigate(`/add-log?type=${type}&editId=${id}`)}
+            className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 transition-colors"
+            aria-label="Edit log"
+          >
+            <Edit3 size={20} />
+          </button>
+          <button 
+            onClick={handleDelete}
+            disabled={deleting}
+            className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition-colors disabled:opacity-50"
+            aria-label="Delete log"
+          >
+            <Trash2 size={20} />
+          </button>
+        </div>
       </header>
 
       {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}

@@ -21,10 +21,12 @@ export default function AddLog() {
   ]
 
   const initialType = searchParams.get('type') || 'fuel'
+  const editId = searchParams.get('editId')
   const [activeType, setActiveType] = useState(initialType)
   
   // Common Form State
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(!!editId)
   const [error, setError] = useState(null)
   
   const [formData, setFormData] = useState({
@@ -39,6 +41,45 @@ export default function AddLog() {
   })
 
   const { activeVehicleId: vehicleId } = useVehicle()
+
+  useEffect(() => {
+    if (!editId) return
+    const fetchLog = async () => {
+      try {
+        let table = ''
+        if (activeType === 'fuel') table = 'fuel_records'
+        else if (activeType === 'service') table = 'service_records'
+        else if (activeType === 'upgrade') table = 'upgrade_records'
+        else if (activeType === 'tax') table = 'tax_records'
+        else if (activeType === 'note') table = 'notes'
+
+        const { data, error: dbError } = await supabase
+          .from(table)
+          .select('*')
+          .eq('id', editId)
+          .single()
+
+        if (dbError) throw dbError
+        if (data) {
+          setFormData({
+            date: data.date || '',
+            odometer: data.odometer || '',
+            description: data.description || '',
+            cost: data.cost || '',
+            liters: data.liters || '',
+            is_fill_to_full: data.is_fill_to_full ?? true,
+            missed_previous_fill: data.missed_previous_fill ?? false,
+            notes: data.notes || data.notes_content || '',
+          })
+        }
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setFetching(false)
+      }
+    }
+    fetchLog()
+  }, [editId, activeType])
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -100,8 +141,13 @@ export default function AddLog() {
         }
       }
 
-      const { error: dbError } = await supabase.from(table).insert(payload)
-      if (dbError) throw dbError
+      if (editId) {
+        const { error: dbError } = await supabase.from(table).update(payload).eq('id', editId)
+        if (dbError) throw dbError
+      } else {
+        const { error: dbError } = await supabase.from(table).insert(payload)
+        if (dbError) throw dbError
+      }
       
       navigate(-1) // Go back on success
     } catch (err) {
@@ -122,36 +168,45 @@ export default function AddLog() {
             <ChevronLeft size={24} />
           </button>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Add Log</h1>
-            <p className="text-xs text-zinc-500">New entry for your vehicle</p>
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+              {editId ? 'Edit Log' : 'Add Log'}
+            </h1>
+            <p className="text-xs text-zinc-500">
+              {editId ? 'Update your vehicle entry' : 'New entry for your vehicle'}
+            </p>
           </div>
         </div>
         <VehicleSwitcher />
       </header>
 
-      {/* Log Type Selector (Horizontal Scroll) */}
-      <div className="flex gap-3 overflow-x-auto pb-4 mb-4 -mx-5 px-5 scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-        {logTypes.map((type) => {
-          const Icon = type.icon
-          const isActive = activeType === type.id
-          return (
-            <button
-              key={type.id}
-              onClick={() => setActiveType(type.id)}
-              className={`flex flex-col items-center gap-2 p-3 rounded-2xl min-w-[80px] flex-shrink-0 transition-all ${
-                isActive 
-                  ? `${type.activeBg} ${type.activeText} shadow-md` 
-                  : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800'
-              }`}
-            >
-              <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-              <span className={`text-xs ${isActive ? 'font-bold' : 'font-semibold'}`}>{type.label}</span>
-            </button>
-          )
-        })}
-      </div>
+      {fetching ? (
+        <div className="flex justify-center py-12"><p className="text-zinc-500 animate-pulse">Loading data...</p></div>
+      ) : (
+        <>
+          {/* Log Type Selector (Horizontal Scroll) */}
+          <div className="flex gap-3 overflow-x-auto pb-4 mb-4 -mx-5 px-5 scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+            {logTypes.map((type) => {
+              const Icon = type.icon
+              const isActive = activeType === type.id
+              return (
+                <button
+                  key={type.id}
+                  onClick={() => setActiveType(type.id)}
+                  disabled={!!editId} // Cannot change type while editing
+                  className={`flex flex-col items-center gap-2 p-3 rounded-2xl min-w-[80px] flex-shrink-0 transition-all ${
+                    isActive 
+                      ? `${type.activeBg} ${type.activeText} shadow-md` 
+                      : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+                  } ${editId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                  <span className={`text-xs ${isActive ? 'font-bold' : 'font-semibold'}`}>{type.label}</span>
+                </button>
+              )
+            })}
+          </div>
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col gap-5">
+          <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col gap-5">
         {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
 
         <div className="space-y-1.5">
@@ -283,9 +338,11 @@ export default function AddLog() {
           disabled={loading} 
           className="w-full py-4 mt-2 px-4 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center"
         >
-          {loading ? 'Saving...' : `Save ${logTypes.find(t => t.id === activeType)?.label}`}
+          {loading ? 'Saving...' : `${editId ? 'Update' : 'Save'} ${logTypes.find(t => t.id === activeType)?.label}`}
         </button>
       </form>
+      </>
+      )}
     </div>
   )
 }
