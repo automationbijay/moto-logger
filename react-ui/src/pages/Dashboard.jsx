@@ -34,12 +34,13 @@ export default function Dashboard() {
       
       const vId = activeVehicle.id
       
-      const [fuelRes, serviceRes, upgradeRes, taxRes, remindersRes] = await Promise.all([
+      const [fuelRes, serviceRes, upgradeRes, taxRes, remindersRes, odoRes] = await Promise.all([
         supabase.from('fuel_records').select('odometer, liters, cost, date').eq('vehicle_id', vId).order('odometer', { ascending: true }),
         supabase.from('service_records').select('cost, date').eq('vehicle_id', vId).order('date', { ascending: true }),
         supabase.from('upgrade_records').select('cost').eq('vehicle_id', vId),
         supabase.from('tax_records').select('cost').eq('vehicle_id', vId),
-        supabase.from('reminders').select('*').eq('vehicle_id', vId)
+        supabase.from('reminders').select('*').eq('vehicle_id', vId),
+        supabase.from('odometer_history').select('odometer').eq('vehicle_id', vId).order('odometer', { ascending: true })
       ])
 
       let totalCost = 0
@@ -54,20 +55,29 @@ export default function Dashboard() {
       totalCost += sumCost(upgradeRes)
       totalCost += sumCost(taxRes)
 
+      const odoRecords = odoRes.data || []
+      if (odoRecords.length > 0) {
+        const firstOdo = odoRecords[0].odometer || 0
+        const lastOdo = odoRecords[odoRecords.length - 1].odometer || 0
+        distance = Math.max(0, lastOdo - firstOdo)
+      }
+
       const fuels = fuelRes.data || []
       if (fuels.length > 0) {
-        const firstOdo = fuels[0].odometer || 0
         const lastFuel = fuels[fuels.length - 1]
-        const lastOdo = lastFuel.odometer || 0
-        distance = Math.max(0, lastOdo - firstOdo)
         
         if (fuels.length > 1) {
+          // Mileage is (last fuel odo - first fuel odo) / sum of liters of all but first fillup
+          const firstFuelOdo = fuels[0].odometer || 0
+          const lastFuelOdo = lastFuel.odometer || 0
+          const fuelDistance = Math.max(0, lastFuelOdo - firstFuelOdo)
+          
           let totalLiters = 0
           for (let i = 1; i < fuels.length; i++) {
             totalLiters += fuels[i].liters || 0
           }
-          if (totalLiters > 0) {
-            mileage = distance / totalLiters
+          if (totalLiters > 0 && fuelDistance > 0) {
+            mileage = fuelDistance / totalLiters
           }
         }
         
@@ -131,6 +141,7 @@ export default function Dashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'service_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, () => fetchStats())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'upgrade_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, () => fetchStats())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tax_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, () => fetchStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'odometer_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, () => fetchStats())
       .subscribe()
 
     return () => {
