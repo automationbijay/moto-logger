@@ -82,7 +82,12 @@ export default function Dashboard() {
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 truncate max-w-[160px]">
-                {new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(7797.62)}
+                {(() => {
+                  const symbols = { NPR: 'रू', INR: '₹', USD: '$', EUR: '€' }
+                  const symbol = symbols[currency] || currency
+                  const amount = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(7797.62)
+                  return `${symbol} ${amount}`
+                })()}
               </p>
             </div>
           </div>
