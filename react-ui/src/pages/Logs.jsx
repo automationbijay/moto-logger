@@ -1,107 +1,107 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Wrench, Fuel, Receipt } from 'lucide-react'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 import { useVehicle } from '../contexts/VehicleContext.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
+import useSWR, { mutate } from 'swr'
 
 export default function Logs() {
   const navigate = useNavigate()
   const { activeVehicle } = useVehicle()
   const { currencySymbol } = useAuth()
-  const [activeTab, setActiveTab] = useState('all') // 'all', 'service', 'fuel'
-  const [logs, setLogs] = useState([])
-  const [stats, setStats] = useState({ recentServiceStr: 'No data', lastFillupStr: 'No data' })
-  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('all') // 'all', 'service', 'fuel', 'tax'
+
+  const fetchLogsData = async ([_key, vId]) => {
+    const [fuelRes, serviceRes, taxRes] = await Promise.all([
+      supabase.from('fuel_records').select('*').eq('vehicle_id', vId),
+      supabase.from('service_records').select('*').eq('vehicle_id', vId),
+      supabase.from('tax_records').select('*').eq('vehicle_id', vId)
+    ])
+    return {
+      fuels: fuelRes.data || [],
+      services: serviceRes.data || [],
+      taxes: taxRes.data || []
+    }
+  }
+
+  const { data, isLoading: loading } = useSWR(
+    activeVehicle?.id ? ['logs_data', activeVehicle.id] : null,
+    fetchLogsData
+  )
 
   useEffect(() => {
-    let isMounted = true
+    if (!activeVehicle?.id) return
 
-    const fetchLogs = async () => {
-      if (!activeVehicle?.id) {
-        if (isMounted) {
-          setLogs([])
-          setStats({ recentServiceStr: 'No data', lastFillupStr: 'No data' })
-          setLoading(false)
-        }
-        return
-      }
+    const revalidate = () => mutate(['logs_data', activeVehicle.id])
 
-      if (isMounted) setLoading(true)
+    const channel = supabase
+      .channel('logs_data')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fuel_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, revalidate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'service_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, revalidate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tax_records', filter: `vehicle_id=eq.${activeVehicle.id}` }, revalidate)
+      .subscribe()
 
-      const [fuelRes, serviceRes, taxRes] = await Promise.all([
-        supabase.from('fuel_records').select('*').eq('vehicle_id', activeVehicle.id),
-        supabase.from('service_records').select('*').eq('vehicle_id', activeVehicle.id),
-        supabase.from('tax_records').select('*').eq('vehicle_id', activeVehicle.id)
-      ])
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [activeVehicle?.id])
 
-      if (isMounted) {
-        const fuels = (fuelRes.data || []).map(f => ({
-          ...f,
-          type: 'fuel',
-          title: `Fuel: ${f.liters}L`,
-          amount: `${f.liters}L`,
-          costStr: `${currencySymbol}${f.cost}`,
-          odometerStr: `${f.odometer} km`
-        }))
+  const { logs, stats } = useMemo(() => {
+    if (!data) return { logs: [], stats: { recentServiceStr: 'No data', lastFillupStr: 'No data' } }
 
-        const services = (serviceRes.data || []).map(s => ({
-          ...s,
-          type: 'service',
-          title: s.description || 'Service',
-          costStr: `${currencySymbol}${s.cost}`,
-          odometerStr: `${s.odometer} km`
-        }))
+    const fuels = data.fuels.map(f => ({
+      ...f,
+      type: 'fuel',
+      title: `Fuel: ${f.liters}L`,
+      amount: `${f.liters}L`,
+      costStr: `${currencySymbol}${f.cost}`,
+      odometerStr: `${f.odometer} km`
+    }))
 
-        const taxes = (taxRes.data || []).map(t => ({
-          ...t,
-          type: 'tax',
-          title: t.description || 'Tax',
-          costStr: `${currencySymbol}${t.cost}`,
-          odometerStr: ''
-        }))
+    const services = data.services.map(s => ({
+      ...s,
+      type: 'service',
+      title: s.description || 'Service',
+      costStr: `${currencySymbol}${s.cost}`,
+      odometerStr: `${s.odometer} km`
+    }))
 
-        // Sort combined logs descending by date
-        const combined = [...fuels, ...services, ...taxes].sort((a, b) => new Date(b.date) - new Date(a.date))
-        setLogs(combined)
+    const taxes = data.taxes.map(t => ({
+      ...t,
+      type: 'tax',
+      title: t.description || 'Tax',
+      costStr: `${currencySymbol}${t.cost}`,
+      odometerStr: ''
+    }))
 
-        // Calculate stats
-        let recentServiceStr = 'No data'
-        let lastFillupStr = 'No data'
+    // Sort combined logs descending by date
+    const combined = [...fuels, ...services, ...taxes].sort((a, b) => new Date(b.date) - new Date(a.date))
 
-        // Fuel and service arrays are already fetched, let's sort them ascending to get the last one
-        const sortedFuels = [...fuels].sort((a, b) => a.odometer - b.odometer)
-        if (sortedFuels.length > 0) {
-          const lastFuel = sortedFuels[sortedFuels.length - 1]
-          if (lastFuel.date) {
-            const fillDate = new Date(lastFuel.date)
-            const today = new Date()
-            const diffTime = Math.abs(today - fillDate)
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-            lastFillupStr = diffDays === 0 ? 'today' : `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
-          }
-        }
+    let recentServiceStr = 'No data'
+    let lastFillupStr = 'No data'
 
-        const sortedServices = [...services].sort((a, b) => new Date(a.date) - new Date(b.date))
-        if (sortedServices.length > 0) {
-          const lastService = sortedServices[sortedServices.length - 1]
-          if (lastService.date) {
-            const serviceDate = new Date(lastService.date)
-            const today = new Date()
-            const diffTime = Math.abs(today - serviceDate)
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-            recentServiceStr = diffDays === 0 ? 'today' : `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
-          }
-        }
-
-        setStats({ recentServiceStr, lastFillupStr })
-        setLoading(false)
+    if (fuels.length > 0) {
+      const lastFuel = fuels.reduce((max, f) => (f.odometer > max.odometer ? f : max), fuels[0])
+      if (lastFuel.date) {
+        const fillDate = new Date(lastFuel.date)
+        const diffDays = Math.floor(Math.abs(new Date() - fillDate) / (1000 * 60 * 60 * 24))
+        lastFillupStr = diffDays === 0 ? 'today' : `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
       }
     }
 
-    fetchLogs()
-  }, [activeVehicle?.id])
+    if (services.length > 0) {
+      const lastService = services.reduce((max, s) => (new Date(s.date) > new Date(max.date) ? s : max), services[0])
+      if (lastService.date) {
+        const serviceDate = new Date(lastService.date)
+        const diffDays = Math.floor(Math.abs(new Date() - serviceDate) / (1000 * 60 * 60 * 24))
+        recentServiceStr = diffDays === 0 ? 'today' : `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
+      }
+    }
+
+    return { logs: combined, stats: { recentServiceStr, lastFillupStr } }
+  }, [data, currencySymbol])
 
   const filteredLogs = logs.filter(log => activeTab === 'all' || log.type === activeTab)
 

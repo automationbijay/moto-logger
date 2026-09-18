@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo } from 'react'
 import { useAuth } from './AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 
@@ -54,15 +54,17 @@ export const VehicleProvider = ({ children }) => {
 
   const activeVehicle = vehicles.find(v => v.id === activeVehicleId) || null
 
+  const value = useMemo(() => ({
+    vehicles,
+    activeVehicle,
+    activeVehicleId,
+    changeActiveVehicle,
+    refreshVehicles: fetchVehicles,
+    loading
+  }), [vehicles, activeVehicle, activeVehicleId, loading])
+
   return (
-    <VehicleContext.Provider value={{
-      vehicles,
-      activeVehicle,
-      activeVehicleId,
-      changeActiveVehicle,
-      refreshVehicles: fetchVehicles,
-      loading
-    }}>
+    <VehicleContext.Provider value={value}>
       {children}
     </VehicleContext.Provider>
   )
