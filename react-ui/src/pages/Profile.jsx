@@ -11,18 +11,42 @@ export default function Profile() {
   const [currency, setCurrency] = useState('NPR')
 
   useEffect(() => {
-    const savedCurrency = localStorage.getItem('preferredCurrency')
-    if (savedCurrency) {
-      setCurrency(savedCurrency)
-    } else {
-      localStorage.setItem('preferredCurrency', 'NPR')
+    const fetchProfile = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('currency')
+          .eq('id', user.id)
+          .single()
+        
+        if (data?.currency) {
+          setCurrency(data.currency)
+          localStorage.setItem('preferredCurrency', data.currency)
+        } else {
+          const savedCurrency = localStorage.getItem('preferredCurrency')
+          if (savedCurrency) {
+            setCurrency(savedCurrency)
+          } else {
+            localStorage.setItem('preferredCurrency', 'NPR')
+          }
+        }
+      }
     }
-  }, [])
+    fetchProfile()
+  }, [user])
 
-  const handleCurrencyChange = (e) => {
+  const handleCurrencyChange = async (e) => {
     const newCurrency = e.target.value
     setCurrency(newCurrency)
     localStorage.setItem('preferredCurrency', newCurrency)
+    
+    if (user) {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ currency: newCurrency })
+        .eq('id', user.id)
+      if (error) console.error("Error updating currency:", error)
+    }
   }
 
   const handleLogout = async () => {

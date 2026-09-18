@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Wrench, Fuel, Plus } from 'lucide-react'
+import { Wrench, Fuel } from 'lucide-react'
 
 export default function Logs() {
   const [activeTab, setActiveTab] = useState('all') // 'all', 'service', 'fuel'
@@ -21,9 +21,6 @@ export default function Logs() {
           <h1>Logs</h1>
           <p>Service and Fuel history</p>
         </div>
-        <button className="btn-icon">
-          <Plus size={24} />
-        </button>
       </header>
 
       <div className="tabs">
