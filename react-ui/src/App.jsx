@@ -21,6 +21,7 @@ import Signup from './pages/auth/Signup.jsx'
 import NotesReminders from './pages/NotesReminders.jsx'
 import VehicleForm from './pages/VehicleForm.jsx'
 import Reminders from './pages/Reminders.jsx'
+import AnalyticsSettings from './pages/AnalyticsSettings.jsx'
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
               <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/reminders" element={<Reminders />} />
               <Route path="/currency" element={<CurrencySettings />} />
+              <Route path="/analytics-settings" element={<AnalyticsSettings />} />
               <Route path="/log-details" element={<LogDetails />} />
             </Route>
             

@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [currency, setCurrency] = useState('NPR')
+  const [monthStartDay, setMonthStartDay] = useState(1)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -46,10 +47,18 @@ export const AuthProvider = ({ children }) => {
               setCurrency(data.currency)
               localStorage.setItem('preferredCurrency', data.currency)
             }
+            if (data.month_start_day) {
+              setMonthStartDay(data.month_start_day)
+              localStorage.setItem('monthStartDay', data.month_start_day)
+            }
           } else {
             const savedCurrency = localStorage.getItem('preferredCurrency')
             if (savedCurrency) {
               setCurrency(savedCurrency)
+            }
+            const savedMonthStartDay = localStorage.getItem('monthStartDay')
+            if (savedMonthStartDay) {
+              setMonthStartDay(parseInt(savedMonthStartDay, 10))
             }
           }
         }
@@ -57,6 +66,7 @@ export const AuthProvider = ({ children }) => {
         if (isMounted) {
           setProfile(null)
           setCurrency('NPR')
+          setMonthStartDay(1)
         }
       }
     }
@@ -75,8 +85,10 @@ export const AuthProvider = ({ children }) => {
     currency,
     currencySymbol,
     setCurrency,
+    monthStartDay,
+    setMonthStartDay,
     loading
-  }), [user, profile, currency, currencySymbol, loading])
+  }), [user, profile, currency, currencySymbol, monthStartDay, loading])
 
   return (
     <AuthContext.Provider value={value}>

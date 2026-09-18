@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useVehicle } from '../contexts/VehicleContext.jsx'
 import { supabase } from '../lib/supabase.js'
-import { LogOut, User, Settings, Bell, ChevronRight, Globe, Plus, Bike, Edit2, Clock } from 'lucide-react'
+import { LogOut, User, Settings, Bell, ChevronRight, Globe, Plus, Bike, Edit2, Clock, CalendarDays } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 
 export default function Profile() {
-  const { user, profile, currency } = useAuth()
+  const { user, profile, currency, monthStartDay } = useAuth()
   const { vehicles, activeVehicleId, changeActiveVehicle } = useVehicle()
   const navigate = useNavigate()
 
@@ -129,6 +129,19 @@ export default function Profile() {
               <div>
                 <h4 className="font-semibold text-zinc-900 dark:text-zinc-50">Currency</h4>
                 <p className="text-zinc-500 text-sm">{currency}</p>
+              </div>
+            </div>
+            <ChevronRight size={20} className="text-zinc-400" />
+          </div>
+
+          <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors active:bg-zinc-100 dark:active:bg-zinc-800" onClick={() => navigate('/analytics-settings')}>
+            <div className="flex items-center gap-4">
+              <div className="p-2.5 bg-orange-100 dark:bg-orange-500/10 text-orange-600 rounded-xl">
+                <CalendarDays size={20} />
+              </div>
+              <div>
+                <h4 className="font-semibold text-zinc-900 dark:text-zinc-50">Analytics Settings</h4>
+                <p className="text-zinc-500 text-sm">Month starts on day {monthStartDay || 1}</p>
               </div>
             </div>
             <ChevronRight size={20} className="text-zinc-400" />
