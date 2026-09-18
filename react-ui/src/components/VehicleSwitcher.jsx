@@ -8,8 +8,6 @@ export default function VehicleSwitcher() {
   const [isOpen, setIsOpen] = useState(false)
   const navigate = useNavigate()
 
-  if (vehicles.length === 0) return null
-
   const handleSelect = (id) => {
     changeActiveVehicle(id)
     setIsOpen(false)

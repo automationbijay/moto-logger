@@ -1,8 +1,10 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { Home, ClipboardList, User, Plus, FileText } from 'lucide-react'
 
 export const Layout = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const hideFab = ['/add-log', '/profile'].some(path => location.pathname.includes(path))
 
   return (
     <div className="relative flex flex-col min-h-[100dvh] max-w-md mx-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 shadow-2xl overflow-hidden">
@@ -10,7 +12,7 @@ export const Layout = () => {
         <Outlet />
       </main>
 
-      <div className="fixed bottom-[80px] right-4 sm:right-[calc(50%-224px+16px)] z-50">
+      <div className={`fixed bottom-[80px] right-4 sm:right-[calc(50%-224px+16px)] z-50 ${hideFab ? 'hidden' : ''}`}>
         <button 
           className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-600 text-white shadow-lg active:scale-95 transition-transform" 
           onClick={() => navigate('/add-log')}

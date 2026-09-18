@@ -4,6 +4,7 @@ import { useVehicle } from '../contexts/VehicleContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { LogOut, User, Settings, Bell, ChevronRight, Globe, Plus, Bike, Edit2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 
 export default function Profile() {
   const { user } = useAuth()
@@ -48,8 +49,9 @@ export default function Profile() {
 
   return (
     <div className="flex flex-col gap-8 pb-8">
-      <header>
+      <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Profile</h1>
+        <VehicleSwitcher />
       </header>
 
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 flex items-center gap-5 shadow-sm">
