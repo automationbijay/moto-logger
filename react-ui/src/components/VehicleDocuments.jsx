@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Upload, X, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Camera, Upload, X, FileText, Image as ImageIcon, Loader2, Download, Trash2, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useVehicle } from '../contexts/VehicleContext';
 
@@ -14,54 +14,51 @@ export default function VehicleDocuments() {
   const [documents, setDocuments] = useState({});
   const [loading, setLoading] = useState(true);
   const [uploadingState, setUploadingState] = useState({}); // docType -> boolean
-  const [viewImage, setViewImage] = useState(null);
+  const [viewImage, setViewImage] = useState(null); // { url, id, path }
   
   const fileInputRefs = useRef({});
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchDocuments = async () => {
+    if (!activeVehicle?.id) {
+      setDocuments({});
+      return;
+    }
     
-    const fetchDocuments = async () => {
-      if (!activeVehicle?.id) {
-        if (isMounted) setDocuments({});
-        return;
-      }
+    setLoading(true);
+    
+    const { data, error } = await supabase
+      .from('vehicle_documents')
+      .select('*')
+      .eq('vehicle_id', activeVehicle.id)
+      .order('created_at', { ascending: true });
       
-      if (isMounted) setLoading(true);
-      
-      const { data, error } = await supabase
+    if (error) {
+      console.error('Error fetching docs:', error);
+      setLoading(false);
+      return;
+    }
+    
+    const docMap = {};
+    for (const doc of data || []) {
+      const { data: signedUrlData } = await supabase
+        .storage
         .from('vehicle_documents')
-        .select('*')
-        .eq('vehicle_id', activeVehicle.id);
+        .createSignedUrl(doc.storage_path, 3600);
         
-      if (error) {
-        console.error('Error fetching docs:', error);
-        if (isMounted) setLoading(false);
-        return;
-      }
+      if (!docMap[doc.doc_type]) docMap[doc.doc_type] = [];
       
-      if (isMounted) {
-        const docMap = {};
-        for (const doc of data || []) {
-          // Get public URL
-          const { data: publicUrlData } = supabase
-            .storage
-            .from('vehicle_documents')
-            .getPublicUrl(doc.storage_path);
-            
-          docMap[doc.doc_type] = {
-            ...doc,
-            publicUrl: publicUrlData.publicUrl
-          };
-        }
-        setDocuments(docMap);
-        setLoading(false);
-      }
-    };
-    
+      docMap[doc.doc_type].push({
+        ...doc,
+        publicUrl: signedUrlData?.signedUrl
+      });
+    }
+    setDocuments(docMap);
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchDocuments();
-    
-    return () => { isMounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeVehicle?.id]);
 
   const handleFileUpload = async (e, docType) => {
@@ -73,68 +70,74 @@ export default function VehicleDocuments() {
     try {
       const userRes = await supabase.auth.getUser();
       const userId = userRes.data.user?.id;
-      
       if (!userId) throw new Error('Not authenticated');
       
       const fileExt = file.name.split('.').pop();
-      const fileName = `${docType}_${Date.now()}.${fileExt}`;
+      // Generate a unique file name to avoid overwriting
+      const fileName = `${docType}_${Date.now()}_${crypto.randomUUID().split('-')[0]}.${fileExt}`;
       const filePath = `${userId}/${activeVehicle.id}/${fileName}`;
       
-      // Upload to storage
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('vehicle_documents')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file);
         
       if (uploadError) throw uploadError;
       
-      // Update or insert into vehicle_documents table
-      const { data: existingDoc } = await supabase
+      const { error: dbError } = await supabase
         .from('vehicle_documents')
-        .select('id')
-        .eq('vehicle_id', activeVehicle.id)
-        .eq('doc_type', docType)
-        .single();
-        
-      if (existingDoc) {
-        await supabase
-          .from('vehicle_documents')
-          .update({ storage_path: uploadData.path, updated_at: new Date() })
-          .eq('id', existingDoc.id);
-      } else {
-        await supabase
-          .from('vehicle_documents')
-          .insert({
-            user_id: userId,
-            vehicle_id: activeVehicle.id,
-            doc_type: docType,
-            storage_path: uploadData.path
-          });
-      }
-      
-      // Refresh docs
-      const { data: publicUrlData } = supabase
-        .storage
-        .from('vehicle_documents')
-        .getPublicUrl(uploadData.path);
-        
-      setDocuments(prev => ({
-        ...prev,
-        [docType]: {
+        .insert({
+          user_id: userId,
+          vehicle_id: activeVehicle.id,
           doc_type: docType,
-          storage_path: uploadData.path,
-          publicUrl: publicUrlData.publicUrl
-        }
-      }));
+          storage_path: uploadData.path
+        });
+
+      if (dbError) throw dbError;
       
+      await fetchDocuments();
     } catch (error) {
       console.error('Error uploading document:', error);
-      alert('Failed to upload document');
+      alert(error.message?.includes('duplicate key') 
+        ? 'Please run the database migration to allow multiple photos first!' 
+        : 'Failed to upload document');
     } finally {
       setUploadingState(prev => ({ ...prev, [docType]: false }));
-      // Reset input
       if (fileInputRefs.current[docType]) {
         fileInputRefs.current[docType].value = '';
       }
+    }
+  };
+
+  const handleDelete = async (docId, storagePath) => {
+    if (!confirm('Are you sure you want to delete this photo?')) return;
+    
+    try {
+      await supabase.storage.from('vehicle_documents').remove([storagePath]);
+      await supabase.from('vehicle_documents').delete().eq('id', docId);
+      
+      setViewImage(null);
+      fetchDocuments();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      alert('Failed to delete document');
+    }
+  };
+
+  const handleDownload = async (url, type) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `${type}_document.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Failed to download image.');
     }
   };
 
@@ -147,75 +150,67 @@ export default function VehicleDocuments() {
         Important Documents
       </h2>
       
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {DOC_TYPES.map(({ id, label }) => {
-          const doc = documents[id];
+          const docs = documents[id] || [];
           const isUploading = uploadingState[id];
           
           return (
-            <div key={id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 flex items-center shadow-sm">
+            <div key={id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex flex-col gap-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 text-sm">{label}</h3>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${docs.length > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800'}`}>
+                  {docs.length} photo{docs.length !== 1 ? 's' : ''}
+                </span>
+              </div>
               
-              {/* Thumbnail / Placeholder */}
-              <div 
-                className={`w-16 h-12 rounded-lg shrink-0 overflow-hidden flex items-center justify-center border ${doc?.publicUrl ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 cursor-pointer relative group' : 'bg-zinc-50 dark:bg-zinc-800/50 border-dashed border-zinc-200 dark:border-zinc-700'}`}
-                onClick={() => doc?.publicUrl && setViewImage(doc.publicUrl)}
-              >
-                {doc?.publicUrl ? (
-                  <>
-                    <img src={doc.publicUrl} alt={label} className="w-full h-full object-cover" />
+              <div className="flex gap-3 overflow-x-auto pb-1 -mx-2 px-2 snap-x">
+                {docs.map((doc, idx) => (
+                  <div 
+                    key={doc.id}
+                    className="w-24 h-20 rounded-xl shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 cursor-pointer relative group snap-start"
+                    onClick={() => setViewImage({ url: doc.publicUrl, id: doc.id, path: doc.storage_path, label })}
+                  >
+                    <img src={doc.publicUrl} alt={`${label} ${idx + 1}`} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <span className="text-white text-[10px] font-medium uppercase tracking-wider">View</span>
                     </div>
-                  </>
-                ) : (
-                  <ImageIcon size={20} className="text-zinc-400 opacity-50" />
-                )}
-              </div>
-              
-              {/* Info */}
-              <div className="ml-3 flex-1 min-w-0">
-                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 text-sm truncate">{label}</h3>
-                <div className="flex items-center mt-0.5">
-                  <span className={`text-xs font-medium ${doc?.publicUrl ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
-                    {doc?.publicUrl ? 'Uploaded' : 'Missing'}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Actions */}
-              <div className="flex gap-2 ml-2 shrink-0">
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  capture="environment"
-                  className="hidden" 
-                  ref={el => fileInputRefs.current[`${id}_capture`] = el}
-                  onChange={(e) => handleFileUpload(e, id)}
-                />
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  ref={el => fileInputRefs.current[`${id}_upload`] = el}
-                  onChange={(e) => handleFileUpload(e, id)}
-                />
+                  </div>
+                ))}
                 
-                <button 
-                  disabled={isUploading}
-                  onClick={() => fileInputRefs.current[`${id}_capture`]?.click()}
-                  className="w-9 h-9 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
-                  aria-label="Capture with camera"
-                >
-                  {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
-                </button>
-                <button 
-                  disabled={isUploading}
-                  onClick={() => fileInputRefs.current[`${id}_upload`]?.click()}
-                  className="w-9 h-9 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
-                  aria-label="Upload from gallery"
-                >
-                  {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                </button>
+                {/* Upload Buttons */}
+                <div className="flex items-center gap-2 shrink-0 snap-start pl-1">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    capture="environment"
+                    className="hidden" 
+                    ref={el => fileInputRefs.current[`${id}_capture`] = el}
+                    onChange={(e) => handleFileUpload(e, id)}
+                  />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    ref={el => fileInputRefs.current[`${id}_upload`] = el}
+                    onChange={(e) => handleFileUpload(e, id)}
+                  />
+                  
+                  <button 
+                    disabled={isUploading}
+                    onClick={() => fileInputRefs.current[`${id}_capture`]?.click()}
+                    className="w-12 h-20 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
+                  >
+                    {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+                  </button>
+                  <button 
+                    disabled={isUploading}
+                    onClick={() => fileInputRefs.current[`${id}_upload`]?.click()}
+                    className="w-12 h-20 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
+                  >
+                    {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -224,20 +219,41 @@ export default function VehicleDocuments() {
       
       {/* Fullscreen Image Viewer Modal */}
       {viewImage && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4" onClick={() => setViewImage(null)}>
-          <button 
-            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full backdrop-blur-sm transition-colors z-50"
-            onClick={(e) => { e.stopPropagation(); setViewImage(null); }}
-          >
-            <X size={24} />
-          </button>
-          <div className="w-full h-full flex items-center justify-center">
+        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4" onClick={() => setViewImage(null)}>
+          <div className="absolute top-4 w-full px-4 flex justify-between items-center z-50">
+            <div className="text-white font-medium">{viewImage.label}</div>
+            <button 
+              className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full backdrop-blur-sm transition-colors"
+              onClick={(e) => { e.stopPropagation(); setViewImage(null); }}
+            >
+              <X size={24} />
+            </button>
+          </div>
+          
+          <div className="w-full h-full flex items-center justify-center py-16">
             <img 
-              src={viewImage} 
+              src={viewImage.url} 
               alt="Document Full View" 
               className="max-w-full max-h-full object-contain"
               onClick={(e) => e.stopPropagation()}
             />
+          </div>
+          
+          <div className="absolute bottom-8 flex gap-4 z-50">
+            <button 
+              onClick={(e) => { e.stopPropagation(); handleDownload(viewImage.url, viewImage.label); }}
+              className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full backdrop-blur-sm transition-colors flex items-center gap-2 font-medium"
+            >
+              <Download size={20} />
+              Download
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); handleDelete(viewImage.id, viewImage.path); }}
+              className="bg-red-500/20 hover:bg-red-500/40 text-red-100 px-6 py-3 rounded-full backdrop-blur-sm transition-colors flex items-center gap-2 font-medium"
+            >
+              <Trash2 size={20} />
+              Delete
+            </button>
           </div>
         </div>
       )}
