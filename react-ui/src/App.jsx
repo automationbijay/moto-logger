@@ -11,6 +11,7 @@ import Profile from './pages/Profile.jsx'
 import AddLog from './pages/AddLog.jsx'
 import AddNote from './pages/AddNote.jsx'
 import AddReminder from './pages/AddReminder.jsx'
+import AddOdometer from './pages/AddOdometer.jsx'
 import EditProfile from './pages/EditProfile.jsx'
 import CurrencySettings from './pages/CurrencySettings.jsx'
 import LogDetails from './pages/LogDetails.jsx'
@@ -41,6 +42,7 @@ function App() {
               <Route path="/add-log" element={<AddLog />} />
               <Route path="/add-note" element={<AddNote />} />
               <Route path="/add-reminder" element={<AddReminder />} />
+              <Route path="/add-odometer" element={<AddOdometer />} />
               <Route path="/vehicle" element={<VehicleForm />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/edit-profile" element={<EditProfile />} />

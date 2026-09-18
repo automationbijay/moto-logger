@@ -5,7 +5,7 @@ import { useVehicle } from '../contexts/VehicleContext.jsx'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 import { ChevronLeft } from 'lucide-react'
 
-export default function AddNote() {
+export default function AddOdometer() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('editId')
@@ -16,18 +16,18 @@ export default function AddNote() {
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    description: '',
-    notes_content: ''
+    odometer: '',
+    notes: ''
   })
 
   const { activeVehicleId: vehicleId } = useVehicle()
 
   useEffect(() => {
     if (!editId) return
-    const fetchNote = async () => {
+    const fetchRecord = async () => {
       try {
         const { data, error: dbError } = await supabase
-          .from('notes')
+          .from('odometer_records')
           .select('*')
           .eq('id', editId)
           .single()
@@ -36,8 +36,8 @@ export default function AddNote() {
         if (data) {
           setFormData({
             date: data.date || '',
-            description: data.description || '',
-            notes_content: data.notes_content || ''
+            odometer: data.odometer || '',
+            notes: data.notes || ''
           })
         }
       } catch (err) {
@@ -46,7 +46,7 @@ export default function AddNote() {
         setFetching(false)
       }
     }
-    fetchNote()
+    fetchRecord()
   }, [editId])
 
   const handleInputChange = (e) => {
@@ -68,19 +68,19 @@ export default function AddNote() {
       const payload = {
         vehicle_id: vehicleId,
         date: formData.date,
-        description: formData.description,
-        notes_content: formData.notes_content
+        odometer: parseInt(formData.odometer, 10),
+        notes: formData.notes
       }
 
       if (editId) {
-        const { error: dbError } = await supabase.from('notes').update(payload).eq('id', editId)
+        const { error: dbError } = await supabase.from('odometer_records').update(payload).eq('id', editId)
         if (dbError) throw dbError
       } else {
-        const { error: dbError } = await supabase.from('notes').insert(payload)
+        const { error: dbError } = await supabase.from('odometer_records').insert(payload)
         if (dbError) throw dbError
       }
       
-      navigate(-1) // Go back on success
+      navigate(-1)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -100,10 +100,10 @@ export default function AddNote() {
           </button>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-              {editId ? 'Edit Note' : 'Add Note'}
+              {editId ? 'Edit Odometer Reading' : 'Add Odometer Reading'}
             </h1>
             <p className="text-xs text-zinc-500">
-              {editId ? 'Update your note' : 'New note'}
+              {editId ? 'Update odometer' : 'New odometer record'}
             </p>
           </div>
         </div>
@@ -129,25 +129,26 @@ export default function AddNote() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Title</label>
+            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Odometer</label>
             <input 
-              type="text" 
-              name="description" 
-              value={formData.description} 
+              type="number" 
+              name="odometer" 
+              value={formData.odometer} 
               onChange={handleInputChange} 
               required 
-              placeholder="E.g. Renew Insurance"
+              min="0"
+              placeholder="e.g. 15000"
               className="w-full px-4 py-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all placeholder:text-zinc-400"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Details</label>
+            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Notes (Optional)</label>
             <textarea 
-              name="notes_content" 
-              value={formData.notes_content} 
+              name="notes" 
+              value={formData.notes} 
               onChange={handleInputChange} 
-              rows="4"
+              rows="3"
               placeholder="Additional information..."
               className="w-full px-4 py-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all placeholder:text-zinc-400 resize-none"
             ></textarea>
@@ -158,7 +159,7 @@ export default function AddNote() {
             disabled={loading}
             className="w-full py-4 mt-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md active:scale-[0.98] transition-all disabled:opacity-70 flex justify-center items-center gap-2"
           >
-            {loading ? 'Saving...' : 'Save Note'}
+            {loading ? 'Saving...' : 'Save Odometer'}
           </button>
         </form>
       )}

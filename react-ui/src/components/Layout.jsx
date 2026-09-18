@@ -5,7 +5,7 @@ import { Home, ClipboardList, User, Plus, FileText, Fuel, Wrench, Receipt, Bell 
 export const Layout = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const hideFab = ['/add-log', '/add-note', '/add-reminder', '/profile'].some(path => location.pathname.includes(path))
+  const hideFab = ['/add-log', '/add-note', '/add-reminder', '/add-odometer', '/profile'].some(path => location.pathname.includes(path))
   
   const [isFabOpen, setIsFabOpen] = useState(false)
 
@@ -55,6 +55,12 @@ export const Layout = () => {
               <span className="bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-xl text-sm font-semibold shadow-sm border border-zinc-200 dark:border-zinc-700">Service</span>
               <div className="h-12 w-12 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg">
                 <Wrench size={20} />
+              </div>
+            </button>
+            <button onClick={() => handleAction('/add-odometer')} className="flex items-center gap-3 active:scale-95 transition-transform group">
+              <span className="bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-xl text-sm font-semibold shadow-sm border border-zinc-200 dark:border-zinc-700">Odometer</span>
+              <div className="h-12 w-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg">
+                <ClipboardList size={20} />
               </div>
             </button>
             <button onClick={() => handleAction('/add-log?type=fuel')} className="flex items-center gap-3 active:scale-95 transition-transform group">
