@@ -11,13 +11,10 @@ export default function AddLog() {
   const [searchParams] = useSearchParams()
   const { currencySymbol } = useAuth()
   
-  // Log types
   const logTypes = [
     { id: 'fuel', label: 'Fuel', icon: Fuel, activeBg: 'bg-orange-500', activeText: 'text-white' },
     { id: 'service', label: 'Service', icon: Wrench, activeBg: 'bg-blue-500', activeText: 'text-white' },
-    { id: 'upgrade', label: 'Upgrade', icon: ArrowUpCircle, activeBg: 'bg-purple-500', activeText: 'text-white' },
     { id: 'tax', label: 'Tax', icon: Receipt, activeBg: 'bg-amber-500', activeText: 'text-white' },
-    { id: 'note', label: 'Note', icon: FileText, activeBg: 'bg-zinc-600', activeText: 'text-white' },
   ]
 
   const initialType = searchParams.get('type') || 'fuel'
@@ -135,7 +132,8 @@ export default function AddLog() {
       } else if (activeType === 'note') {
         table = 'notes'
         payload = {
-          ...payload,
+          vehicle_id: vehicleId,
+          date: formData.date,
           description: formData.description,
           notes_content: formData.notes
         }

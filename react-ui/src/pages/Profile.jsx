@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useVehicle } from '../contexts/VehicleContext.jsx'
 import { supabase } from '../lib/supabase.js'
-import { LogOut, User, Settings, Bell, ChevronRight, Globe, Plus, Bike, Edit2 } from 'lucide-react'
+import { LogOut, User, Settings, Bell, ChevronRight, Globe, Plus, Bike, Edit2, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 
@@ -41,6 +41,12 @@ export default function Profile() {
           </h2>
           <p className="text-sm text-zinc-500 truncate">{profile?.email || user?.email}</p>
         </div>
+        <button 
+          onClick={() => navigate('/edit-profile')}
+          className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+        >
+          <Edit2 size={20} />
+        </button>
       </div>
 
       <section>
@@ -128,13 +134,13 @@ export default function Profile() {
             <ChevronRight size={20} className="text-zinc-400" />
           </div>
 
-          <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors active:bg-zinc-100 dark:active:bg-zinc-800" onClick={() => navigate('/edit-profile')}>
+          <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors active:bg-zinc-100 dark:active:bg-zinc-800" onClick={() => navigate('/reminders')}>
             <div className="flex items-center gap-4">
               <div className="p-2.5 bg-purple-100 dark:bg-purple-500/10 text-purple-600 rounded-xl">
-                <Settings size={20} />
+                <Clock size={20} />
               </div>
               <div>
-                <h4 className="font-semibold text-zinc-900 dark:text-zinc-50">Account Settings</h4>
+                <h4 className="font-semibold text-zinc-900 dark:text-zinc-50">Reminders</h4>
               </div>
             </div>
             <ChevronRight size={20} className="text-zinc-400" />

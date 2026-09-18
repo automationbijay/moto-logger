@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useVehicle } from '../contexts/VehicleContext.jsx'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, Wrench, Fuel, Route, Wallet } from 'lucide-react'
+import { AlertCircle, Wrench, Fuel, Route, Wallet, Droplet } from 'lucide-react'
 import VehicleSwitcher from '../components/VehicleSwitcher.jsx'
 import { supabase } from '../lib/supabase.js'
 
@@ -34,12 +34,12 @@ export default function Dashboard() {
       
       const vId = activeVehicle.id
       
-      const [fuelRes, serviceRes, upgradeRes, taxRes, remindersRes] = await Promise.all([
+      const [fuelRes, serviceRes, upgradeRes, taxRes, notesRes] = await Promise.all([
         supabase.from('fuel_records').select('odometer, liters, cost, date').eq('vehicle_id', vId).order('odometer', { ascending: true }),
         supabase.from('service_records').select('cost, date').eq('vehicle_id', vId).order('date', { ascending: true }),
         supabase.from('upgrade_records').select('cost').eq('vehicle_id', vId),
         supabase.from('tax_records').select('cost').eq('vehicle_id', vId),
-        supabase.from('reminders').select('*').eq('vehicle_id', vId)
+        supabase.from('notes').select('*').eq('vehicle_id', vId)
       ])
 
       let totalCost = 0
@@ -71,10 +71,13 @@ export default function Dashboard() {
           }
         }
         
-        // Calculate last fill up string if possible
-        if (activeVehicle.current_odometer && lastOdo) {
-          const diff = activeVehicle.current_odometer - lastOdo
-          lastFillupStr = diff >= 0 ? `${diff} km ago` : 'recently'
+        // Calculate last fill up string
+        if (lastFuel.date) {
+          const fillDate = new Date(lastFuel.date)
+          const today = new Date()
+          const diffTime = Math.abs(today - fillDate)
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+          lastFillupStr = diffDays === 0 ? 'today' : `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
         }
       }
 
@@ -90,6 +93,13 @@ export default function Dashboard() {
         }
       }
 
+      let futureNotes = []
+      if (notesRes.data) {
+        const todayStr = new Date().toISOString().split('T')[0]
+        futureNotes = notesRes.data.filter(n => n.date > todayStr)
+        futureNotes.sort((a, b) => a.date.localeCompare(b.date))
+      }
+
       if (isMounted) {
         setStats({
           mileage: mileage > 0 ? mileage.toFixed(1) : '-',
@@ -97,7 +107,7 @@ export default function Dashboard() {
           totalCost: totalCost,
           recentServiceStr,
           lastFillupStr,
-          reminders: remindersRes.data || [],
+          reminders: futureNotes,
           loading: false
         })
       }
@@ -126,7 +136,6 @@ export default function Dashboard() {
       <header className="flex justify-between items-center mb-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Dashboard</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Welcome back, {user?.email}</p>
         </div>
         <VehicleSwitcher />
       </header>
@@ -162,7 +171,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4">
+          <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-rose-50 dark:bg-rose-500/10 rounded-2xl text-rose-600 dark:text-rose-400">
                 <Wallet size={24} />
@@ -176,6 +185,20 @@ export default function Dashboard() {
                   const amount = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(stats.totalCost)
                   return `${currencySymbol} ${amount}`
                 })()}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-2xl text-blue-600 dark:text-blue-400">
+                <Droplet size={24} />
+              </div>
+              <p className="font-medium text-zinc-600 dark:text-zinc-300">Petrol Price</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                200 <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">rs/L</span>
               </p>
             </div>
           </div>
