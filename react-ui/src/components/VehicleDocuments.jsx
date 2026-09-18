@@ -268,7 +268,7 @@ export default function VehicleDocuments() {
                     <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x">
                       {docs.map((doc, idx) => (
                         <div 
-                          key={doc.id}
+                          key={doc.storage_path}
                           className="w-28 h-24 rounded-xl shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 cursor-pointer relative group snap-start shadow-sm"
                           onClick={() => setViewImage({ url: doc.publicUrl, id: doc.id, path: doc.storage_path, label })}
                         >
@@ -276,6 +276,14 @@ export default function VehicleDocuments() {
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <span className="text-white text-[10px] font-medium uppercase tracking-wider">View</span>
                           </div>
+                          
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDelete(doc.id, doc.storage_path); }}
+                            className="absolute top-1 right-1 w-6 h-6 bg-black/40 hover:bg-red-500 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-colors z-10"
+                            title="Delete photo"
+                          >
+                            <X size={14} />
+                          </button>
                         </div>
                       ))}
                       
