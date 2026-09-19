@@ -15,7 +15,7 @@ export const Layout = () => {
   }
 
   return (
-    <div className="relative flex flex-col min-h-[100dvh] max-w-md mx-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 shadow-2xl overflow-hidden">
+    <div className="relative flex flex-col min-h-[100dvh] max-w-md mx-auto bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 shadow-2xl overflow-hidden">
       <main className="flex-1 overflow-y-auto pb-24 p-6" onClick={() => isFabOpen && setIsFabOpen(false)}>
         <Outlet />
       </main>

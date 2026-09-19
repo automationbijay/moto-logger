@@ -176,85 +176,71 @@ export default function Dashboard() {
         <VehicleSwitcher />
       </header>
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 mb-2 shadow-sm">
-        <div className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
-          
-          <div className="flex items-center justify-between pb-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-2xl text-amber-600 dark:text-amber-400">
-                <Fuel size={24} />
-              </div>
-              <p className="font-medium text-zinc-600 dark:text-zinc-300">Mileage</p>
+      <section className="relative overflow-hidden rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 shadow-sm mb-2">
+        {/* Ambient Glow Decorator - keeping the amber accent glow */}
+        <div className="absolute -right-8 -top-8 w-36 h-36 bg-amberFlame/10 rounded-full blur-2xl pointer-events-none"></div>
+        
+        <div className="relative z-10 flex flex-col gap-4">
+          {/* Top Row: Label and Trend Indicator */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amberFlame"></span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">expenses<br/></span>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                {stats.loading ? '...' : stats.mileage} <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">km/L</span>
-              </p>
-            </div>
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-500/20">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" strokeLinecap="round" strokeLinejoin="round"></path>
+              </svg>
+              <span>Petrol: 200 Rs/L</span>
+            </span>
           </div>
 
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl text-emerald-600 dark:text-emerald-400">
-                <Route size={24} />
-              </div>
-              <p className="font-medium text-zinc-600 dark:text-zinc-300">Distance</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                {stats.loading ? '...' : stats.distance.toLocaleString()} <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">km</span>
-              </p>
-            </div>
+          {/* Big Metric Value Display */}
+          <div className="flex items-baseline gap-1.5 pt-0.5">
+            <span className="text-2xl font-bold text-amberFlame">{currencySymbol}</span>
+            <span className="text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 truncate max-w-full">
+              {stats.loading ? '...' : new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(stats.totalCost)}
+            </span>
           </div>
 
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl text-indigo-600 dark:text-indigo-400">
-                <Gauge size={24} />
+          {/* Secondary Performance Badges Grid */}
+          <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+            {/* Mileage Badge */}
+            <div className="bg-zinc-50 dark:bg-zinc-950/60 rounded-xl p-2.5 border border-zinc-100 dark:border-zinc-800/40 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amberFlame/15 flex items-center justify-center text-amberFlame shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M3 4a1 1 0 011-1h6a1 1 0 011 1v15a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM15 5h3a2 2 0 012 2v6a2 2 0 002 2v0a2 2 0 002-2V7a4 4 0 00-4-4h-5v5z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                </svg>
               </div>
-              <p className="font-medium text-zinc-600 dark:text-zinc-300">Odometer</p>
+              <div className="min-w-0 flex-1">
+                <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-tight">Mileage</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate">{stats.loading ? '...' : stats.mileage}</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium shrink-0">km/L</span>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                {stats.loading ? '...' : stats.latestOdo.toLocaleString()} <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">km</span>
-              </p>
+
+            {/* Odometer Badge */}
+            <div className="bg-zinc-50 dark:bg-zinc-950/60 rounded-xl p-2.5 border border-zinc-100 dark:border-zinc-800/40 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-marineBlue/15 flex items-center justify-center text-marineBlue shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" strokeWidth="2"></circle>
+                  <path d="M12 12l3-3" strokeLinecap="round" strokeWidth="2"></path>
+                  <path d="M8 12h.01M16 12h.01M12 8h.01" strokeLinecap="round" strokeWidth="2"></path>
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-tight">Odometer</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate">{stats.loading ? '...' : stats.latestOdo.toLocaleString()}</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium shrink-0">km</span>
+                </div>
+              </div>
             </div>
           </div>
-
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-rose-50 dark:bg-rose-500/10 rounded-2xl text-rose-600 dark:text-rose-400">
-                <Wallet size={24} />
-              </div>
-              <p className="font-medium text-zinc-600 dark:text-zinc-300">Total Cost</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 truncate max-w-[160px]">
-                {(() => {
-                  if (stats.loading) return '...'
-                  const amount = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(stats.totalCost)
-                  return `${currencySymbol} ${amount}`
-                })()}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-2xl text-blue-600 dark:text-blue-400">
-                <Droplet size={24} />
-              </div>
-              <p className="font-medium text-zinc-600 dark:text-zinc-300">Petrol Price</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                200 <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">rs/L</span>
-              </p>
-            </div>
-          </div>
-
         </div>
-      </div>
+      </section>
 
       <div className="mt-4">
         <ExpensesChart costs={stats.costs} />
