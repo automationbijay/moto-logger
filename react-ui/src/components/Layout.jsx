@@ -80,7 +80,7 @@ export const Layout = () => {
         </button>
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800 flex justify-around items-center pb-safe z-50">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-16 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800 flex justify-around items-center pb-safe z-50">
         <NavLink to="/" className={({ isActive }) => `flex flex-col items-center justify-center w-16 gap-1 transition-colors ${isActive ? 'text-orange-600' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>
           {({ isActive }) => (
             <>
